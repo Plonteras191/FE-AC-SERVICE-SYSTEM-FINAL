@@ -1,0 +1,58 @@
+/* src/styles/RevenueHistory.css */
+.revenue-history-container {
+    padding: 50px;
+    max-width: 1000px;
+    margin: 0 auto;
+    text-align: center;
+  }
+  
+  .revenue-history-container h2 {
+    color: #0c5994;
+    margin-bottom: 20px;
+    margin-top: -30px;
+  }
+  
+  .back-button {
+    padding: 10px 20px;
+    background-color: #007BFF;
+    color: #fff;
+    border: none;
+    border-radius: 30px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background-color 0.3s, transform 0.3s;
+    margin-bottom: 20px;
+  }
+  
+  .back-button:hover {
+    background-color: #0056b3;
+    transform: translateY(-2px);
+  }
+  
+  .revenue-history-box {
+    background-color: #ffffff;
+    padding: 40px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    text-align: left;
+   
+  }
+  
+  .revenue-history-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 20px;
+  }
+  
+  .revenue-history-table th,
+  .revenue-history-table td {
+    padding: 12px;
+    border: 1px solid #ccc;
+    text-align: center;
+  }
+  
+  .revenue-history-table th {
+    background-color: #007BFF;
+    color: #fff;
+  }
+  

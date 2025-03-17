@@ -1,0 +1,107 @@
+.revenue-container {
+    padding: 50px;
+    max-width: 1000px;
+    margin: 0 auto;
+    text-align: center;
+  }
+  
+  .revenue-container h2 {
+    color: #007BFF;
+    margin-bottom: 20px;
+  }
+  
+  /* Back to Dashboard Button */
+  .back-button {
+    padding: 10px 20px;
+    background-color: #007BFF;
+    color: #fff;
+    border: none;
+    border-radius: 30px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background-color 0.3s, transform 0.3s;
+    margin-bottom: 20px;
+  }
+  
+  .back-button:hover {
+    background-color: #0056b3;
+    transform: translateY(-2px);
+  }
+  
+  /* Revenue Box */
+  .revenue-box {
+    background-color: #fff;
+    padding: 40px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    text-align: left;
+  }
+  
+  /* Revenue Table */
+  .revenue-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 20px;
+  }
+  
+  .revenue-table th,
+  .revenue-table td {
+    padding: 12px;
+    border: 1px solid #ccc;
+    text-align: center;
+  }
+  
+  .revenue-table th {
+    background-color: #007BFF;
+    color: #fff;
+  }
+  
+  .revenue-table input {
+    width: 80%;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+  }
+  
+  /* Revenue Actions */
+  .revenue-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 20px;
+    flex-wrap: wrap;
+  }
+  
+  .compute-button {
+    padding: 10px 20px;
+    background-color: #28a745;
+    color: #fff;
+    border: none;
+    border-radius: 30px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background-color 0.3s, transform 0.3s;
+  }
+  
+  .compute-button:hover {
+    background-color: #218838;
+    transform: translateY(-2px);
+  }
+
+  .clear-button {
+    padding: 10px 20px;
+    background-color: #c82333;
+    color: #fff;
+    border: none;
+    border-radius: 30px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background-color 0.3s, transform 0.3s;
+    margin-left: -150px;
+  }
+  
+  .total-display h3 {
+    margin: 0;
+    color: #007BFF;
+  }
+  

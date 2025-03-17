@@ -1,0 +1,98 @@
+
+
+.admin-appointments-container {
+    padding: 50px;
+    max-width: 1500px; 
+    margin: 0 auto;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    width: 100%;
+  }
+  
+  
+  .appointments-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+  }
+  
+  .appointments-table th,
+  .appointments-table td {
+    padding: 14px; 
+    border: 1px solid #ccc;
+    text-align: center;
+  }
+  
+  .appointments-table th {
+    background-color: #007BFF;
+    color: #fff;
+  }
+  
+  
+  .cancel-button,
+  .reschedule-button,
+  .confirm-button,
+  .accept-button {
+    padding: 8px 12px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    margin: 4px;
+    transition: background-color 0.3s, transform 0.2s;
+    display: inline;
+  }
+  
+  .cancel-button {
+    background-color: #dc3545;
+    color: #fff;
+  }
+  
+  .cancel-button:hover {
+    background-color: #c82333;
+    transform: scale(1.05);
+  }
+  
+  .reschedule-button {
+    background-color: #ffc107;
+    color: #333;
+  }
+  
+  .reschedule-button:hover {
+    background-color: #e0a800;
+    transform: scale(1.05);
+  }
+  
+  .confirm-button {
+    background-color: #28a745;
+    color: #fff;
+  }
+  
+  .confirm-button:hover {
+    background-color: #218838;
+    transform: scale(1.05);
+  }
+  
+  .accept-button {
+    background-color: #007bff;
+    color: #fff;
+  }
+  
+  .accept-button:hover {
+    background-color: #0056b3;
+    transform: scale(1.05);
+  }
+  
+  
+  .reschedule-input-container {
+    margin-top: 5px;
+  }
+  
+  .reschedule-date-input {
+    padding: 7px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    width: 100%; 
+  }
+  
