@@ -7,18 +7,14 @@ const Revenue = () => {
   const [revenueData, setRevenueData] = useState({});
   const [totalRevenue, setTotalRevenue] = useState(0);
 
-  
+  // On mount, load appointments from localStorage's "completedAppointments"
   useEffect(() => {
-    loadCompletedAppointments();
-  }, []);
-
-  const loadCompletedAppointments = () => {
     const storedAppointments = localStorage.getItem('completedAppointments');
     if (storedAppointments) {
       const parsedAppointments = JSON.parse(storedAppointments);
       setAppointments(parsedAppointments);
     }
-  };
+  }, []);
 
   const handleInputChange = (id, value) => {
     setRevenueData(prev => ({
@@ -27,6 +23,7 @@ const Revenue = () => {
     }));
   };
 
+  // Compute total revenue based on input values
   const computeTotalRevenue = () => {
     let total = 0;
     Object.values(revenueData).forEach(val => {
@@ -36,26 +33,41 @@ const Revenue = () => {
       }
     });
     setTotalRevenue(total);
+  };
 
-    
+  // Save computed revenue to revenue history, clear revenue inputs,
+  // and remove processed appointments from the Revenue page.
+  const saveRevenue = () => {
+    // Validate that every appointment has a revenue amount
+    const missingInput = appointments.some(appt => {
+      const value = revenueData[appt.id];
+      return !value || value.toString().trim() === "";
+    });
+
+    if (missingInput) {
+      alert("Please input revenue amount for all appointments before saving.");
+      return;
+    }
+
+    // Create a new revenue record with the current date and computed total
     const newEntry = {
       date: new Date().toLocaleDateString(),
-      total: total,
+      total: totalRevenue,
     };
 
-   
+    // Save the new revenue record to localStorage under "revenueHistory"
     const storedHistory = localStorage.getItem('revenueHistory');
     const history = storedHistory ? JSON.parse(storedHistory) : [];
     history.push(newEntry);
     localStorage.setItem('revenueHistory', JSON.stringify(history));
-  };
 
- 
-  const clearCompletedAppointments = () => {
-    localStorage.removeItem('completedAppointments');
-    setAppointments([]);
+    // Clear revenue data for new entries and reset totalRevenue
     setRevenueData({});
     setTotalRevenue(0);
+
+    // Remove the computed appointments from the Revenue page
+    localStorage.removeItem('completedAppointments');
+    setAppointments([]);
   };
 
   return (
@@ -97,10 +109,10 @@ const Revenue = () => {
         )}
         <div className="revenue-actions">
           <button className="compute-button" onClick={computeTotalRevenue}>
-            Compute Total Revenue
+            Compute
           </button>
-          <button className="clear-button" onClick={clearCompletedAppointments}>
-            Clear
+          <button className="save-button" onClick={saveRevenue}>
+            Save
           </button>
           <div className="total-display">
             <h3>Total Revenue: Php {totalRevenue.toFixed(2)}</h3>

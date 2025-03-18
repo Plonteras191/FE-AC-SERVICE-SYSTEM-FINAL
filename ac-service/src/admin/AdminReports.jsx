@@ -38,7 +38,7 @@ const AdminReports = () => {
           </ul>
         </div>
         <div className="report-section">
-          <h3>Declined Appointments</h3>
+          <h3>Reject Appointments</h3>
           <ul>
             {declinedAppointments.map(app => (
               <li key={app.id}>

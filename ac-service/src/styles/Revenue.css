@@ -88,16 +88,16 @@
     transform: translateY(-2px);
   }
 
-  .clear-button {
+  .save-button {
     padding: 10px 20px;
-    background-color: #c82333;
+    background-color: #0a7bf4;
     color: #fff;
     border: none;
     border-radius: 30px;
     cursor: pointer;
     font-size: 1rem;
     transition: background-color 0.3s, transform 0.3s;
-    margin-left: -150px;
+    margin-left: -300px;
   }
   
   .total-display h3 {

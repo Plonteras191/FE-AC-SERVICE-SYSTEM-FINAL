@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import Modal from '../components/Modal';
 import '../styles/AdminAppointments.css';
 
 const AdminAppointments = () => {
@@ -43,12 +44,32 @@ const AdminAppointments = () => {
   const [rescheduleId, setRescheduleId] = useState(null);
   const [newDate, setNewDate] = useState('');
 
+  // State for modal
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedAppointmentId, setSelectedAppointmentId] = useState(null);
+
   useEffect(() => {
     localStorage.setItem('appointments', JSON.stringify(appointments));
   }, [appointments]);
 
   const handleCancelAppointment = (id) => {
     setAppointments(appointments.filter(appt => appt.id !== id));
+  };
+
+  const openRejectModal = (id) => {
+    setSelectedAppointmentId(id);
+    setIsModalOpen(true);
+  };
+
+  const handleConfirmReject = () => {
+    handleCancelAppointment(selectedAppointmentId);
+    setIsModalOpen(false);
+    setSelectedAppointmentId(null);
+  };
+
+  const handleCancelModal = () => {
+    setIsModalOpen(false);
+    setSelectedAppointmentId(null);
   };
 
   const handleRescheduleClick = (id) => {
@@ -80,7 +101,6 @@ const AdminAppointments = () => {
 
     const storedConfirmed = localStorage.getItem('confirmedAppointments');
     const confirmedAppointments = storedConfirmed ? JSON.parse(storedConfirmed) : [];
-    
     const updatedConfirmed = [...confirmedAppointments, acceptedAppointment];
     localStorage.setItem('confirmedAppointments', JSON.stringify(updatedConfirmed));
   };
@@ -151,7 +171,7 @@ const AdminAppointments = () => {
                     <>
                       <button
                         className="cancel-button"
-                        onClick={() => handleCancelAppointment(appt.id)}
+                        onClick={() => openRejectModal(appt.id)}
                       >
                         Reject
                       </button>
@@ -175,6 +195,14 @@ const AdminAppointments = () => {
           </tbody>
         </table>
       )}
+      
+      <Modal
+        isOpen={isModalOpen}
+        title="Confirm Rejection"
+        message="Are you sure you want to reject this appointment?"
+        onConfirm={handleConfirmReject}
+        onCancel={handleCancelModal}
+      />
     </div>
   );
 };

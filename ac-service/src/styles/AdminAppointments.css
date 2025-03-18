@@ -2,7 +2,7 @@
 
 .admin-appointments-container {
     padding: 50px;
-    max-width: 1500px; 
+    max-width: 1200px; 
     margin: 0 auto;
     background-color: #fff;
     border-radius: 8px;
@@ -41,7 +41,7 @@
     cursor: pointer;
     margin: 4px;
     transition: background-color 0.3s, transform 0.2s;
-    display: inline;
+    display: inline-block;
   }
   
   .cancel-button {
