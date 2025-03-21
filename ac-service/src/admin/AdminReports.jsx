@@ -1,13 +1,14 @@
 import React from 'react';
 import '../styles/AdminReports.css';
+import { FaCheckCircle, FaClock, FaTimesCircle } from 'react-icons/fa';
 
 const AdminReports = () => {
   const completeAppointments = [
     { id: 3, customer: 'Edmar ArmStrong', date: '2025-04-03' },
     { id: 2, customer: 'Gabi Val', date: '2025-04-05' }
   ];
-  const pendingAppointments = [ // Changed from cancelledAppointments
-    {id: 1, customer: 'John Kristoffer', date: '2025-04-01' }
+  const pendingAppointments = [
+    { id: 1, customer: 'John Kristoffer', date: '2025-04-01' }
   ];
   const declinedAppointments = [
     { id: 4, customer: 'Just Buico', date: '2025-04-04' }
@@ -15,38 +16,48 @@ const AdminReports = () => {
 
   return (
     <div className="admin-reports-container">
-      <h2>Reports</h2>
-      <div className="reports-box">
-        <div className="report-section">
-          <h3>Complete Appointments</h3>
+      <h2>Admin Reports</h2>
+      <div className="reports-grid">
+        
+        {/* Completed Appointments */}
+        <div className="report-box complete">
+          <h3><FaCheckCircle className="report-icon" /> Completed Appointments</h3>
           <ul>
             {completeAppointments.map(app => (
               <li key={app.id}>
-                ID: {app.id} - {app.customer} on {app.date}
+                <strong>ID:</strong> {app.id} - <strong>{app.customer}</strong> <br />
+                <span className="date">Date: {app.date}</span>
               </li>
             ))}
           </ul>
         </div>
-        <div className="report-section">
-          <h3>Pending Appointments</h3> {/* Changed title */}
+
+        {/* Pending Appointments */}
+        <div className="report-box pending">
+          <h3><FaClock className="report-icon" /> Pending Appointments</h3>
           <ul>
             {pendingAppointments.map(app => (
               <li key={app.id}>
-                ID: {app.id} - {app.customer} on {app.date}
+                <strong>ID:</strong> {app.id} - <strong>{app.customer}</strong> <br />
+                <span className="date">Date: {app.date}</span>
               </li>
             ))}
           </ul>
         </div>
-        <div className="report-section">
-          <h3>Reject Appointments</h3>
+
+        {/* Rejected Appointments */}
+        <div className="report-box rejected">
+          <h3><FaTimesCircle className="report-icon" /> Rejected Appointments</h3>
           <ul>
             {declinedAppointments.map(app => (
               <li key={app.id}>
-                ID: {app.id} - {app.customer} on {app.date}
+                <strong>ID:</strong> {app.id} - <strong>{app.customer}</strong> <br />
+                <span className="date">Date: {app.date}</span>
               </li>
             ))}
           </ul>
         </div>
+
       </div>
     </div>
   );

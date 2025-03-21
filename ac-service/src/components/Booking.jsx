@@ -60,7 +60,7 @@ const Booking = () => {
       date: dateStr,
       name: formData.get('name'),
       phone: formData.get('phone'),
-      email: formData.get('email'),
+      email: formData.get('email'), // now optional
       completeAddress: formData.get('completeAddress'),
       street: formData.get('street'),
       houseNo: formData.get('houseNo'),
@@ -107,18 +107,23 @@ const Booking = () => {
 
             <label htmlFor="phone">Phone Number:</label>
             <input
-             type="tel"
-             id="phone"
-             name="phone"
+              type="tel"
+              id="phone"
+              name="phone"
               placeholder="Your Phone Number"
               required
-               pattern="^[0-9]{11}$"
-                title="Phone number must be exactly 11 digits."
-                />
-
+              pattern="^[0-9]{11}$"
+              title="Phone number must be exactly 11 digits."
+            />
 
             <label htmlFor="email">Email:</label>
-            <input type="email" id="email" name="email" placeholder="Your Email" required />
+            <input
+              type="email"
+              id="email"
+              name="email"
+              placeholder="Your Email"
+              // Removed required attribute so email is optional
+            />
           </div>
 
           {/* Address Section */}
