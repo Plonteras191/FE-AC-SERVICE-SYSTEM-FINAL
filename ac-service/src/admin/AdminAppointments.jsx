@@ -198,7 +198,6 @@ const AdminAppointments = () => {
       
       <Modal
         isOpen={isModalOpen}
-        title="Confirm Rejection"
         message="Are you sure you want to reject this appointment?"
         onConfirm={handleConfirmReject}
         onCancel={handleCancelModal}

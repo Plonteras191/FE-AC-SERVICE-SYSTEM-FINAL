@@ -14,32 +14,22 @@ const Confirmation = () => {
       <p>Your appointment is currently pending. We will contact you shortly to confirm your details.</p>
       <div className="booking-details">
         <ul>
-          <li>
-            <strong>Date:</strong> {bookingData.date}
-          </li>
-          <li>
-            <strong>Name:</strong> {bookingData.name}
-          </li>
-          <li>
-            <strong>Phone:</strong> {bookingData.phone}
-          </li>
-          <li>
-            <strong>Email:</strong> {bookingData.email}
-          </li>
+          <li><strong>Date:</strong> {bookingData.date}</li>
+          <li><strong>Name:</strong> {bookingData.name}</li>
+          <li><strong>Phone:</strong> {bookingData.phone}</li>
+          <li><strong>Email:</strong> {bookingData.email}</li>
           {bookingData.completeAddress && (
-            <li>
-              <strong>Complete Address:</strong> {bookingData.completeAddress}
-            </li>
+            <li><strong>Complete Address:</strong> {bookingData.completeAddress}</li>
           )}
           <li>
             <strong>Street:</strong> {bookingData.street}, <strong>House No:</strong> {bookingData.houseNo}, <strong>Apartment No:</strong> {bookingData.apartmentNo}
           </li>
           <li>
-            <strong>Service:</strong> {bookingData.service}
+            <strong>Service(s):</strong> {bookingData.services && bookingData.services.length > 0 ? bookingData.services.join(', ') : "None selected"}
           </li>
           {bookingData.acTypes && bookingData.acTypes.length > 0 && (
             <li>
-              <strong>AC Type:</strong> {bookingData.acTypes.join(', ')}
+              <strong>AC Type(s):</strong> {bookingData.acTypes.join(', ')}
             </li>
           )}
         </ul>

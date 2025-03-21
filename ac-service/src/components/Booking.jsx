@@ -4,13 +4,20 @@ import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
 import '../styles/Booking.css';
 
+// Mapping of service keys to full service names
+const serviceOptions = {
+  maintenance: "Routine Maintenance and Cleaning",
+  repair: "Repair",
+  installation: "Installation",
+};
+
 const Booking = () => {
-  const [service, setService] = useState('');
+  const [selectedServices, setSelectedServices] = useState([]); // for multiple service selection
   const [acTypes, setAcTypes] = useState([]);
   const [selectedDate, setSelectedDate] = useState(null);
   const navigate = useNavigate();
 
-  // Sample available dates for demonstration purposes
+  // Sample available dates
   const availableDates = [
     new Date('2025-04-01'),
     new Date('2025-04-02'),
@@ -24,23 +31,29 @@ const Booking = () => {
   ];
 
   const handleServiceChange = (e) => {
-    setService(e.target.value);
-    setAcTypes([]); // Reset AC types when service changes
+    const { value, checked } = e.target;
+    if (checked) {
+      setSelectedServices([...selectedServices, value]);
+    } else {
+      setSelectedServices(selectedServices.filter(service => service !== value));
+    }
   };
 
   const handleACTypeChange = (e) => {
-    const value = e.target.value;
-    if (e.target.checked) {
-      if (!acTypes.includes(value)) {
-        setAcTypes([...acTypes, value]);
-      }
+    const { value, checked } = e.target;
+    if (checked) {
+      setAcTypes([...acTypes, value]);
     } else {
-      setAcTypes(acTypes.filter((type) => type !== value));
+      setAcTypes(acTypes.filter(type => type !== value));
     }
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    if (selectedServices.length === 0) {
+      alert("Please select at least one service.");
+      return;
+    }
     const formData = new FormData(e.target);
     const dateStr = selectedDate ? selectedDate.toISOString().slice(0, 10) : '';
     const data = {
@@ -52,7 +65,8 @@ const Booking = () => {
       street: formData.get('street'),
       houseNo: formData.get('houseNo'),
       apartmentNo: formData.get('apartmentNo'),
-      service,
+      // Store full service names
+      services: selectedServices.map(service => serviceOptions[service]),
       acTypes,
     };
     console.log(data);
@@ -81,10 +95,27 @@ const Booking = () => {
           {/* Customer Details Section */}
           <div className="customer-details">
             <label htmlFor="name">Name:</label>
-            <input type="text" id="name" name="name" placeholder="Your Name" required />
+            <input
+              type="text"
+              id="name"
+              name="name"
+              placeholder="Your Name"
+              required
+              pattern="[A-Za-z ]+"
+              title="Name should contain only letters and spaces."
+            />
 
             <label htmlFor="phone">Phone Number:</label>
-            <input type="tel" id="phone" name="phone" placeholder="Your Phone Number" required />
+            <input
+             type="tel"
+             id="phone"
+             name="phone"
+              placeholder="Your Phone Number"
+              required
+               pattern="^[0-9]{11}$"
+                title="Phone number must be exactly 11 digits."
+                />
+
 
             <label htmlFor="email">Email:</label>
             <input type="email" id="email" name="email" placeholder="Your Email" required />
@@ -94,7 +125,6 @@ const Booking = () => {
           <div className="address-section">
             <h3>Address</h3>
             <div className="complete-address">
-             
               <input
                 type="text"
                 id="completeAddress"
@@ -109,19 +139,26 @@ const Booking = () => {
             </div>
           </div>
 
-          {/* Service Section */}
+          {/* Service Section (Multiple Choices) */}
           <div className="service-section">
-            <h3>Service</h3>
-            <select value={service} onChange={handleServiceChange} required>
-              <option value="">Select Service</option>
-              <option value="maintenance">Routine Maintenance and Cleaning</option>
-              <option value="repair">Repair</option>
-              <option value="installation">Installation</option>
-            </select>
+            <h3>Service (Select one or more)</h3>
+            <div className="service-options">
+              {Object.entries(serviceOptions).map(([key, label]) => (
+                <label key={key}>
+                  <input
+                    type="checkbox"
+                    value={key}
+                    checked={selectedServices.includes(key)}
+                    onChange={handleServiceChange}
+                  />
+                  {label}
+                </label>
+              ))}
+            </div>
           </div>
 
           {/* AC Type Section */}
-          {service && (
+          {selectedServices.length > 0 && (
             <div className="ac-type-section">
               <h3>AC Type (Select all that apply)</h3>
               <div className="ac-type-options">

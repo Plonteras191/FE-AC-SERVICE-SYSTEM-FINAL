@@ -30,7 +30,7 @@ const Dashboard = () => {
   return (
     <PageWrapper>
       <div className="dashboard-main">
-        <h2>Admin Dashboard</h2>
+        <h1>Admin Dashboard</h1>
       
 
         <div className="dashboard-section">

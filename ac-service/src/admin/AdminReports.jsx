@@ -3,11 +3,11 @@ import '../styles/AdminReports.css';
 
 const AdminReports = () => {
   const completeAppointments = [
-    { id: 1, customer: 'John Kristoffer', date: '2025-04-01' },
+    { id: 3, customer: 'Edmar ArmStrong', date: '2025-04-03' },
     { id: 2, customer: 'Gabi Val', date: '2025-04-05' }
   ];
-  const cancelledAppointments = [
-    { id: 3, customer: 'Edmar ArmStrong', date: '2025-04-03' }
+  const pendingAppointments = [ // Changed from cancelledAppointments
+    {id: 1, customer: 'John Kristoffer', date: '2025-04-01' }
   ];
   const declinedAppointments = [
     { id: 4, customer: 'Just Buico', date: '2025-04-04' }
@@ -28,9 +28,9 @@ const AdminReports = () => {
           </ul>
         </div>
         <div className="report-section">
-          <h3>Cancelled Appointments</h3>
+          <h3>Pending Appointments</h3> {/* Changed title */}
           <ul>
-            {cancelledAppointments.map(app => (
+            {pendingAppointments.map(app => (
               <li key={app.id}>
                 ID: {app.id} - {app.customer} on {app.date}
               </li>

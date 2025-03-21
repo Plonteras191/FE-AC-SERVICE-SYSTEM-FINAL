@@ -10,10 +10,11 @@
     width: 650px; 
   }
   
-  .dashboard-main h2 {
+  .dashboard-main h1 {
     color: #007BFF;
     margin-bottom: 10px;
     text-align: left;
+    margin-left: -60px;
   }
   
   .dashboard-main p {
