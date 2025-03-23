@@ -1,66 +1,29 @@
-// src/admin/AdminAppointments.jsx
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import Modal from '../components/Modal';
 import '../styles/AdminAppointments.css';
 
 const AdminAppointments = () => {
-  // Updated initialAppointments: appointment id 2 now has multiple services with separate dates.
-  const initialAppointments = [
-    {
-      id: 1,
-      customer: 'John Kristoffer',
-      phone: '092-682-25122',
-      email: 'john@gmail.com',
-      service: 'Repair',
-      date: '2025-04-01',
-      time: '10:00 AM',
-      address: '123 Main St, Bugo, CDO',
-      status: 'Pending',
-    },
-    {
-      id: 2,
-      customer: 'Just Buico',
-      phone: '095-104-38982',
-      email: 'just@gmail.com',
-      service: ['Installation', 'Maintenance'], // multiple services
-      serviceDates: { 
-        Installation: '2025-04-02', 
-        Maintenance: '2025-04-03' 
-      },
-      time: '02:00 PM',
-      address: '456 Elm St, Zone 6, CDO',
-      status: 'Pending',
-    },
-  ];
-
-  const [appointments, setAppointments] = useState(() => {
-    const stored = localStorage.getItem('appointments');
-    if (stored) {
-      const parsed = JSON.parse(stored);
-      if (parsed.length === 0) {
-        localStorage.setItem('appointments', JSON.stringify(initialAppointments));
-        return initialAppointments;
-      }
-      return parsed;
-    }
-    return initialAppointments;
-  });
-
-  // For rescheduling, we now also track which service is being rescheduled (if applicable)
+  const [appointments, setAppointments] = useState([]);
   const [rescheduleId, setRescheduleId] = useState(null);
   const [rescheduleService, setRescheduleService] = useState(null);
-  const [newDate, setNewDate] = useState('');
-
-  // State for modal (reject confirmation)
+  const [newDate, setNewDate] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedAppointmentId, setSelectedAppointmentId] = useState(null);
 
   useEffect(() => {
-    localStorage.setItem('appointments', JSON.stringify(appointments));
-  }, [appointments]);
+    axios.get("http://127.0.0.1:8000/api/appointments")
+      .then(response => setAppointments(response.data))
+      .catch(error => console.error("Error fetching appointments:", error));
+  }, []);
 
-  const handleCancelAppointment = (id) => {
-    setAppointments(appointments.filter(appt => appt.id !== id));
+  const handleCancelAppointment = async (id) => {
+    try {
+      await axios.delete(`http://127.0.0.1:8000/api/appointments/${id}`);
+      setAppointments(appointments.filter(appt => appt.id !== id));
+    } catch (error) {
+      console.error("Error deleting appointment:", error);
+    }
   };
 
   const openRejectModal = (id) => {
@@ -79,54 +42,41 @@ const AdminAppointments = () => {
     setSelectedAppointmentId(null);
   };
 
-  // For rescheduling a specific service's date or a single-date appointment
   const handleRescheduleClick = (id, serviceName = null) => {
     setRescheduleId(id);
-    setRescheduleService(serviceName); // if null, then appointment has a single date
+    setRescheduleService(serviceName);
   };
 
-  const handleRescheduleConfirm = (id) => {
-    setAppointments(appointments.map(appt => {
-      if (appt.id === id) {
-        if (appt.serviceDates && rescheduleService) {
-          // Update only the specific service's date
-          return {
-            ...appt,
-            serviceDates: {
-              ...appt.serviceDates,
-              [rescheduleService]: newDate
-            }
-          };
-        } else {
-          // For single date appointments
-          return { ...appt, date: newDate };
-        }
-      }
-      return appt;
-    }));
+  const handleRescheduleConfirm = async (id) => {
+    const payload = rescheduleService
+      ? { service_name: rescheduleService, new_date: newDate }
+      : { new_date: newDate };
+
+    try {
+      const response = await axios.put(`http://127.0.0.1:8000/api/appointments/${id}`, payload);
+      setAppointments(appointments.map(appt => appt.id === id ? response.data : appt));
+    } catch (error) {
+      console.error("Error rescheduling:", error);
+    }
+
     setRescheduleId(null);
     setRescheduleService(null);
-    setNewDate('');
+    setNewDate("");
   };
 
   const handleRescheduleCancel = () => {
     setRescheduleId(null);
     setRescheduleService(null);
-    setNewDate('');
+    setNewDate("");
   };
 
-  const handleAcceptAppointment = (id) => {
-    const appointmentToAccept = appointments.find(appt => appt.id === id);
-    if (!appointmentToAccept) return;
-
-    const acceptedAppointment = { ...appointmentToAccept, status: 'Confirmed' };
-    const updatedPending = appointments.filter(appt => appt.id !== id);
-    setAppointments(updatedPending);
-
-    const storedConfirmed = localStorage.getItem('confirmedAppointments');
-    const confirmedAppointments = storedConfirmed ? JSON.parse(storedConfirmed) : [];
-    const updatedConfirmed = [...confirmedAppointments, acceptedAppointment];
-    localStorage.setItem('confirmedAppointments', JSON.stringify(updatedConfirmed));
+  const handleAcceptAppointment = async (id) => {
+    try {
+      const response = await axios.post(`http://127.0.0.1:8000/api/appointments/${id}/accept`);
+      setAppointments(appointments.map(appt => appt.id === id ? response.data : appt));
+    } catch (error) {
+      console.error("Error accepting appointment:", error);
+    }
   };
 
   return (
@@ -159,14 +109,14 @@ const AdminAppointments = () => {
                 <td>{appt.email}</td>
                 <td>
                   {Array.isArray(appt.service)
-                    ? appt.service.join(', ')
+                    ? appt.service.join(", ")
                     : appt.service}
                 </td>
                 <td>{appt.address}</td>
                 <td>
-                  {appt.serviceDates ? (
+                  {appt.service_dates ? (
                     <ul className="multi-date-list">
-                      {Object.entries(appt.serviceDates).map(([serviceName, date]) => (
+                      {Object.entries(appt.service_dates).map(([serviceName, date]) => (
                         <li key={serviceName}>
                           <strong>{serviceName}:</strong> {date}
                           {rescheduleId === appt.id && rescheduleService === serviceName ? (
@@ -264,7 +214,7 @@ const AdminAppointments = () => {
           </tbody>
         </table>
       )}
-      
+
       <Modal
         isOpen={isModalOpen}
         message="Are you sure you want to reject this appointment?"
