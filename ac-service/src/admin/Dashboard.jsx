@@ -1,29 +1,45 @@
 import React, { useState, useEffect } from 'react';
 import PageWrapper from '../components/PageWrapper';
+import axios from 'axios';
 import '../styles/Dashboard.css';
 
 const Dashboard = () => {
-  const [confirmedAppointments, setConfirmedAppointments] = useState(() => {
-    const stored = localStorage.getItem('confirmedAppointments');
-    return stored ? JSON.parse(stored) : [];
-  });
+  const [confirmedAppointments, setConfirmedAppointments] = useState([]);
 
+  // Fetch confirmed (accepted) appointments from the backend on component mount
   useEffect(() => {
-    localStorage.setItem('confirmedAppointments', JSON.stringify(confirmedAppointments));
-  }, [confirmedAppointments]);
+    axios.get("http://localhost/AC-SERVICE-FINAL/backend/api/appointments.php")
+      .then(response => {
+        // Filter for appointments that are "Accepted"
+        const confirmed = response.data.filter(
+          appt => appt.status && appt.status.toLowerCase() === 'accepted'
+        );
+        setConfirmedAppointments(confirmed);
+      })
+      .catch(error => console.error("Error fetching appointments:", error));
+  }, []);
 
+  // Complete appointment by sending a PUT request to update its status to "Complete"
   const completeAppointment = (id) => {
-    const appointmentToComplete = confirmedAppointments.find(app => app.id === id);
-    if (appointmentToComplete) {
-      const updatedConfirmed = confirmedAppointments.filter(app => app.id !== id);
-      setConfirmedAppointments(updatedConfirmed);
+    axios.put(`http://localhost/AC-SERVICE-FINAL/backend/api/appointments.php?complete&id=${id}`)
+      .then(response => {
+        const updatedAppointment = response.data;
+        // Update the confirmedAppointments list with the updated appointment
+        const updatedConfirmed = confirmedAppointments.map(app =>
+          app.id === id ? updatedAppointment : app
+        );
+        setConfirmedAppointments(updatedConfirmed);
+      })
+      .catch(error => console.error("Error completing appointment:", error));
+  };
 
-      const completedAppointment = { ...appointmentToComplete, status: 'Complete', sales: '' };
-
-      const storedCompleted = localStorage.getItem('completedAppointments');
-      const completedAppointments = storedCompleted ? JSON.parse(storedCompleted) : [];
-      const newCompleted = [...completedAppointments, completedAppointment];
-      localStorage.setItem('completedAppointments', JSON.stringify(newCompleted));
+  // Utility function to parse services JSON string (if needed)
+  const parseServices = (servicesStr) => {
+    try {
+      const services = JSON.parse(servicesStr);
+      return services.map(s => `${s.type} on ${s.date}`).join(', ');
+    } catch (error) {
+      return servicesStr;
     }
   };
 
@@ -31,8 +47,6 @@ const Dashboard = () => {
     <PageWrapper>
       <div className="dashboard-main">
         <h1>Admin Dashboard</h1>
-      
-
         <div className="dashboard-section">
           <h3>Confirmed Appointments</h3>
           <div className="appointment-box">
@@ -44,7 +58,7 @@ const Dashboard = () => {
                     <th>Customer</th>
                     <th>Phone</th>
                     <th>Email</th>
-                    <th>Service</th>
+                    <th>Service(s)</th>
                     <th>Address</th>
                     <th>Date</th>
                     <th>Time</th>
@@ -56,14 +70,18 @@ const Dashboard = () => {
                   {confirmedAppointments.map((appointment) => (
                     <tr key={appointment.id}>
                       <td>{appointment.id}</td>
-                      <td>{appointment.customer}</td>
+                      <td>{appointment.name}</td>
                       <td>{appointment.phone}</td>
                       <td>{appointment.email}</td>
-                      <td>{appointment.service}</td>
-                      <td>{appointment.address}</td>
-                      <td>{appointment.date}</td>
-                      <td>{appointment.time}</td>
-                      <td>{appointment.status}</td>
+                      <td>
+                        {appointment.services 
+                          ? parseServices(appointment.services)
+                          : 'N/A'}
+                      </td>
+                      <td>{appointment.complete_address}</td>
+                      <td>{appointment.selected_main_date}</td>
+                      <td>{appointment.time || 'N/A'}</td>
+                      <td>{appointment.status || 'Pending'}</td>
                       <td>
                         <button
                           className="complete-button"
