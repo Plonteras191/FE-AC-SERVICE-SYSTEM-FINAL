@@ -3,7 +3,7 @@
 
 header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
-header("Access-Control-Allow-Headers: Content-Type");
+header("Access-Control-Allow-Headers: Content-Type, Authorization");
 header("Content-Type: application/json");
 
 require '../database.php'; // Adjust the path if needed
@@ -44,7 +44,7 @@ elseif ($method === 'POST' && isset($_GET['action']) && $_GET['action'] === 'acc
     exit;
 }
 
-elseif ($method === 'PUT' && $id) {
+elseif ($method === 'PUT' && isset($_GET['action']) && $_GET['action'] === 'reschedule' && $id) {
     // Reschedule a service within an appointment.
     // Expect a JSON payload with "service_name" and "new_date".
     $data = json_decode(file_get_contents("php://input"), true);
@@ -90,7 +90,7 @@ elseif ($method === 'PUT' && $id) {
     }
     
     // Re-encode the updated services array to JSON
-    $newServicesJson = $conn->real_escape_string(json_encode($services));
+    $newServicesJson = json_encode($services);
     
     // Update the appointment record with the new services JSON
     $updateSql = "UPDATE bookings SET services = '$newServicesJson' WHERE id = $id";

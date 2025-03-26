@@ -18,7 +18,7 @@ import AdminReports from './admin/AdminReports';
 import AdminCalendar from './admin/AdminCalendar';
 import Revenue from './admin/Revenue';
 import RevenueHistory from './admin/RevenueHistory';
-import AdminBooking from './admin/AdminBooking'; // New AdminBooking page
+import AdminBooking from './admin/AdminBooking';
 import AdminLayout from './admin/AdminLayout';
 
 import PageWrapper from './components/PageWrapper';
@@ -44,7 +44,8 @@ const AnimatedRoutes = () => {
         <Route path="/admin" element={<AdminLayout />}>
           <Route path="dashboard" element={<PageWrapper><Dashboard /></PageWrapper>} />
           <Route path="appointments" element={<PageWrapper><AdminAppointments /></PageWrapper>} />
-          <Route path="booking" element={<PageWrapper><AdminBooking /></PageWrapper>} />
+          {/* Admin Booking route (unique path) */}
+          <Route path="admin-booking" element={<PageWrapper><AdminBooking /></PageWrapper>} />
           <Route path="reports" element={<PageWrapper><AdminReports /></PageWrapper>} />
           <Route path="calendar" element={<PageWrapper><AdminCalendar /></PageWrapper>} />
           <Route path="revenue" element={<PageWrapper><Revenue /></PageWrapper>} />

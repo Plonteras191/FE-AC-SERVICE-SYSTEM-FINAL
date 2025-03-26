@@ -48,6 +48,16 @@
   display: inline-block;
 }
 
+.cancel-button {
+  background-color: #dc3545;
+  color: #fff;
+}
+
+.cancel-button:hover {
+  background-color: #c82333;
+  transform: scale(1.05);
+}
+
 /* Reject button styling */
 .reject-button {
   background-color: #dc3545;

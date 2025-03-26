@@ -84,19 +84,20 @@ const AdminAppointments = () => {
     try {
       // Send PUT request to update the service's date within the appointment
       const response = await axios.put(`${fetchUrl}?action=reschedule&id=${appointmentId}`, payload);
-      if (response.data.success) {
+      // Instead of checking response.data.success, we simply check if there's no error property
+      if (response.data && !response.data.error) {
+        // Update the appointment in state with the updated appointment returned by the backend
         setAppointments(prev =>
-          prev.map(appt =>
-            appt.id === appointmentId
-              ? { ...appt, services: JSON.stringify(response.data.updated_services) }
-              : appt
-          )
+          prev.map(appt => (appt.id === appointmentId ? response.data : appt))
         );
+        // Remove the inline input for that service
         setRescheduleInputs(prev => {
           const newState = { ...prev };
           delete newState[key];
           return newState;
         });
+      } else {
+        console.error("Backend error:", response.data.error);
       }
     } catch (error) {
       console.error("Error rescheduling service:", error);
@@ -179,7 +180,9 @@ const AdminAppointments = () => {
                                 <input
                                   type="date"
                                   value={rescheduleInputs[key]}
-                                  onChange={(e) => handleRescheduleInputChange(appt.id, s.type, e.target.value)}
+                                  onChange={(e) =>
+                                    handleRescheduleInputChange(appt.id, s.type, e.target.value)
+                                  }
                                   className="reschedule-date-input"
                                 />
                                 <button
