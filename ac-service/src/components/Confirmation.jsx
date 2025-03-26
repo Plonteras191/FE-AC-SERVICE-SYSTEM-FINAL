@@ -7,6 +7,13 @@ const Confirmation = () => {
   const navigate = useNavigate();
   const bookingData = location.state || {};
 
+  // Convert the services array of objects into a string representation
+  const servicesDisplay = bookingData.services && bookingData.services.length > 0
+    ? bookingData.services
+        .map(service => `${service.type} on ${service.date}`)
+        .join(', ')
+    : "None selected";
+
   return (
     <div className="confirmation-container">
       <h2>Appointment Pending</h2>
@@ -14,7 +21,6 @@ const Confirmation = () => {
       <p>Your appointment is currently pending. We will contact you shortly to confirm your details.</p>
       <div className="booking-details">
         <ul>
-          <li><strong>Date:</strong> {bookingData.date}</li>
           <li><strong>Name:</strong> {bookingData.name}</li>
           <li><strong>Phone:</strong> {bookingData.phone}</li>
           <li><strong>Email:</strong> {bookingData.email}</li>
@@ -25,7 +31,7 @@ const Confirmation = () => {
             <strong>Street:</strong> {bookingData.street}, <strong>House No:</strong> {bookingData.houseNo}, <strong>Apartment No:</strong> {bookingData.apartmentNo}
           </li>
           <li>
-            <strong>Service(s):</strong> {bookingData.services && bookingData.services.length > 0 ? bookingData.services.join(', ') : "None selected"}
+            <strong>Service(s):</strong> {servicesDisplay}
           </li>
           {bookingData.acTypes && bookingData.acTypes.length > 0 && (
             <li>

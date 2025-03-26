@@ -45,9 +45,9 @@ $services = isset($data['services']) ? $conn->real_escape_string(json_encode($da
 $acTypes = isset($data['acTypes']) ? $conn->real_escape_string(json_encode($data['acTypes'])) : "";
 
 // Prepare the SQL insert query to save the booking
-$sql = "INSERT INTO bookings (name, phone, email, complete_address, street, house_no, apartment_no, selected_main_date, services, ac_types)
-        VALUES ('$name', '$phone', '$email', '$completeAddress', '$street', '$houseNo', '$apartmentNo', " .
-        ($selectedMainDate ? "'$selectedMainDate'" : "NULL") . ", '$services', '$acTypes')";
+$sql = "INSERT INTO bookings (name, phone, email, complete_address, street, house_no, apartment_no, services, ac_types)
+        VALUES ('$name', '$phone', '$email', '$completeAddress', '$street', '$houseNo', '$apartmentNo', '$services', '$acTypes')";
+
 
 // Execute the query and check for success
 if ($conn->query($sql) === TRUE) {

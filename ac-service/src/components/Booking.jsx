@@ -15,7 +15,6 @@ const Booking = () => {
   const [selectedServices, setSelectedServices] = useState([]);
   const [serviceDates, setServiceDates] = useState({}); // Stores a date for each service
   const [acTypes, setAcTypes] = useState([]);
-  const [selectedDate, setSelectedDate] = useState(null); // Main date for booking
   const navigate = useNavigate();
 
   // Handle selection/deselection of services
@@ -70,7 +69,7 @@ const Booking = () => {
       street: formData.get('street'),
       houseNo: formData.get('houseNo'),
       apartmentNo: formData.get('apartmentNo'),
-      selectedMainDate: selectedDate ? selectedDate.toISOString().slice(0, 10) : null,
+      // Removed selectedMainDate field since we're not using a main date anymore.
       services: selectedServices.map(service => ({
         type: serviceOptions[service],
         date: serviceDates[service] ? serviceDates[service].toISOString().slice(0, 10) : null,
@@ -106,20 +105,6 @@ const Booking = () => {
       <h2>Book Your Appointment</h2>
       <div className="booking-box">
         <form onSubmit={handleSubmit}>
-          {/* Main Date Section */}
-          <div className="date-section">
-            <label htmlFor="date">Select Main Date:</label>
-            <DatePicker
-              id="date"
-              selected={selectedDate}
-              onChange={(date) => setSelectedDate(date)}
-              minDate={new Date()} // Allow only current and future dates
-              placeholderText="Select a date"
-              required
-              dateFormat="yyyy-MM-dd"
-            />
-          </div>
-
           {/* Customer Details Section */}
           <div className="customer-details">
             <label htmlFor="name">Name (required):</label>

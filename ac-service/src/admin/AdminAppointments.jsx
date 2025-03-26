@@ -5,7 +5,6 @@ import '../styles/AdminAppointments.css';
 
 const AdminAppointments = () => {
   const [appointments, setAppointments] = useState([]);
-  // This object holds inline reschedule values keyed by "appointmentId-serviceType"
   const [rescheduleInputs, setRescheduleInputs] = useState({});
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedAppointmentId, setSelectedAppointmentId] = useState(null);
@@ -17,7 +16,6 @@ const AdminAppointments = () => {
     // Fetch only pending appointments for admin view
     axios.get(fetchUrl)
       .then(response => {
-        // Ensure response.data is an array
         let data = response.data;
         if (!Array.isArray(data)) data = [data];
         // Filter to show only pending appointments
@@ -85,18 +83,21 @@ const AdminAppointments = () => {
     const payload = { service_name: serviceType, new_date: newDate };
     try {
       // Send PUT request to update the service's date within the appointment
-      const response = await axios.put(`${fetchUrl}?id=${appointmentId}`, payload);
-      const updatedAppointment = response.data;
-      // Update the appointment in state
-      setAppointments(prev =>
-        prev.map(appt => (appt.id === appointmentId ? updatedAppointment : appt))
-      );
-      // Remove the inline input for that service
-      setRescheduleInputs(prev => {
-        const newState = { ...prev };
-        delete newState[key];
-        return newState;
-      });
+      const response = await axios.put(`${fetchUrl}?action=reschedule&id=${appointmentId}`, payload);
+      if (response.data.success) {
+        setAppointments(prev =>
+          prev.map(appt =>
+            appt.id === appointmentId
+              ? { ...appt, services: JSON.stringify(response.data.updated_services) }
+              : appt
+          )
+        );
+        setRescheduleInputs(prev => {
+          const newState = { ...prev };
+          delete newState[key];
+          return newState;
+        });
+      }
     } catch (error) {
       console.error("Error rescheduling service:", error);
     }
@@ -113,13 +114,17 @@ const AdminAppointments = () => {
   };
 
   // Accept appointment by sending a POST request with query param action=accept
-  // Ensure your backend returns the updated appointment with status "Accepted"
   const handleAcceptAppointment = async (id) => {
     try {
       const response = await axios.post(`${fetchUrl}?action=accept&id=${id}`);
-      // On success, remove the accepted appointment from admin view.
-      setAppointments(prev => prev.filter(appt => appt.id !== id));
-      // (Dashboard will fetch accepted appointments from the database.)
+      // Check if the returned appointment has status "Accepted"
+      if (
+        response.data &&
+        response.data.status &&
+        response.data.status.toLowerCase() === 'accepted'
+      ) {
+        setAppointments(prev => prev.filter(appt => appt.id !== id));
+      }
     } catch (error) {
       console.error("Error accepting appointment:", error);
     }
@@ -128,8 +133,7 @@ const AdminAppointments = () => {
   // Utility function to parse services JSON string
   const parseServices = (servicesStr) => {
     try {
-      const services = JSON.parse(servicesStr);
-      return services;
+      return JSON.parse(servicesStr);
     } catch (error) {
       return [];
     }
@@ -150,7 +154,6 @@ const AdminAppointments = () => {
               <th>Email</th>
               <th>Service(s)</th>
               <th>Address</th>
-              <th>Main Date</th>
               <th>Status</th>
               <th>Actions</th>
             </tr>
@@ -166,7 +169,7 @@ const AdminAppointments = () => {
                   <td>{appt.email}</td>
                   <td>
                     {services.length > 0 ? (
-                      services.map((s, index) => {
+                      services.map((s) => {
                         const key = `${appt.id}-${s.type}`;
                         return (
                           <div key={key}>
@@ -209,7 +212,6 @@ const AdminAppointments = () => {
                     )}
                   </td>
                   <td>{appt.complete_address}</td>
-                  <td>{appt.selected_main_date}</td>
                   <td>{appt.status || 'Pending'}</td>
                   <td>
                     <button className="reject-button" onClick={() => openRejectModal(appt.id)}>

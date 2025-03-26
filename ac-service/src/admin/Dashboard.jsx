@@ -60,8 +60,6 @@ const Dashboard = () => {
                     <th>Email</th>
                     <th>Service(s)</th>
                     <th>Address</th>
-                    <th>Date</th>
-                    <th>Time</th>
                     <th>Status</th>
                     <th>Action</th>
                   </tr>
@@ -79,8 +77,6 @@ const Dashboard = () => {
                           : 'N/A'}
                       </td>
                       <td>{appointment.complete_address}</td>
-                      <td>{appointment.selected_main_date}</td>
-                      <td>{appointment.time || 'N/A'}</td>
                       <td>{appointment.status || 'Pending'}</td>
                       <td>
                         <button
