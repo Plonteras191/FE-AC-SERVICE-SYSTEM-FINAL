@@ -1,59 +1,99 @@
 <?php
-// booking.php
-
-// Set headers for JSON response and enable CORS
 header("Content-Type: application/json");
 header("Access-Control-Allow-Origin: *");
-header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
+header("Access-Control-Allow-Methods: POST, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type");
 
-// Handle preflight OPTIONS request
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit(0);
 }
 
-// Include the database connection file
 require_once '../database.php';
 
-// Only allow POST requests for booking submission
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    http_response_code(405);
     echo json_encode(["message" => "Invalid request method."]);
     exit;
 }
 
-// Read the incoming JSON data from the request body
 $data = json_decode(file_get_contents("php://input"), true);
 
-// Validate required fields: name, phone, and completeAddress must be present
-if (!isset($data['name'], $data['phone'], $data['completeAddress'])) {
+if (!isset($data['name'], $data['phone'], $data['completeAddress'], $data['services'])) {
+    http_response_code(400);
     echo json_encode(["message" => "Missing required fields."]);
     exit;
 }
 
-// Sanitize and assign input data
-$name = $conn->real_escape_string($data['name']);
-$phone = $conn->real_escape_string($data['phone']);
-$email = isset($data['email']) ? $conn->real_escape_string($data['email']) : "";
+// Assign fields
+$name            = $conn->real_escape_string($data['name']);
+$phone           = $conn->real_escape_string($data['phone']);
+$email           = isset($data['email']) ? $conn->real_escape_string($data['email']) : "";
 $completeAddress = $conn->real_escape_string($data['completeAddress']);
-$street = isset($data['street']) ? $conn->real_escape_string($data['street']) : "";
-$houseNo = isset($data['houseNo']) ? $conn->real_escape_string($data['houseNo']) : "";
-$apartmentNo = isset($data['apartmentNo']) ? $conn->real_escape_string($data['apartmentNo']) : "";
-$selectedMainDate = isset($data['selectedMainDate']) ? $conn->real_escape_string($data['selectedMainDate']) : null;
+$street          = isset($data['street']) ? $conn->real_escape_string($data['street']) : "";
+$houseNo         = isset($data['houseNo']) ? $conn->real_escape_string($data['houseNo']) : "";
+$apartmentNo     = isset($data['apartmentNo']) ? $conn->real_escape_string($data['apartmentNo']) : "";
+$servicesArray   = $data['services'];
+$acTypes         = isset($data['acTypes']) ? $data['acTypes'] : [];
 
-// Encode services and acTypes arrays as JSON strings for storage
-$services = isset($data['services']) ? $conn->real_escape_string(json_encode($data['services'])) : "";
-$acTypes = isset($data['acTypes']) ? $conn->real_escape_string(json_encode($data['acTypes'])) : "";
+$servicesJson = json_encode($servicesArray);
+$acTypesJson  = json_encode($acTypes);
 
-// Prepare the SQL insert query to save the booking
-$sql = "INSERT INTO bookings (name, phone, email, complete_address, street, house_no, apartment_no, services, ac_types)
-        VALUES ('$name', '$phone', '$email', '$completeAddress', '$street', '$houseNo', '$apartmentNo', '$services', '$acTypes')";
+// Begin transaction
+$conn->begin_transaction();
 
+try {
+    // Insert into bookings table
+    $stmt = $conn->prepare("INSERT INTO bookings (name, phone, email, complete_address, street, house_no, apartment_no, services, ac_types)
+                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+    if (!$stmt) {
+        throw new Exception("Prepare failed: " . $conn->error);
+    }
+    $stmt->bind_param("sssssssss", $name, $phone, $email, $completeAddress, $street, $houseNo, $apartmentNo, $servicesJson, $acTypesJson);
+    if (!$stmt->execute()) {
+        throw new Exception("Booking insertion failed: " . $stmt->error);
+    }
+    $bookingId = $conn->insert_id;
+    $stmt->close();
 
-// Execute the query and check for success
-if ($conn->query($sql) === TRUE) {
-    echo json_encode(["message" => "Booking saved successfully", "bookingId" => $conn->insert_id]);
-} else {
-    echo json_encode(["message" => "Error saving booking", "error" => $conn->error]);
+    // For each service, verify availability and insert into booking_services
+    foreach ($servicesArray as $service) {
+        if (!isset($service['type'], $service['date'])) {
+            throw new Exception("Each service must include a type and a date.");
+        }
+        $serviceType = $conn->real_escape_string($service['type']);
+        $appointmentDate = $conn->real_escape_string($service['date']);
+
+        // Check if this date already has 2 or more bookings for this service
+        $query = "SELECT COUNT(*) as count FROM booking_services 
+                  WHERE appointment_date = '$appointmentDate' AND service_type = '$serviceType'";
+        $result = $conn->query($query);
+        if (!$result) {
+            throw new Exception("Error checking appointment availability: " . $conn->error);
+        }
+        $row = $result->fetch_assoc();
+        if ($row['count'] >= 2) {
+            throw new Exception("The date $appointmentDate for service $serviceType is fully booked.");
+        }
+        $result->free();
+
+        // Insert into booking_services
+        $stmtService = $conn->prepare("INSERT INTO booking_services (booking_id, service_type, appointment_date) VALUES (?, ?, ?)");
+        if (!$stmtService) {
+            throw new Exception("Prepare for service insertion failed: " . $conn->error);
+        }
+        $stmtService->bind_param("iss", $bookingId, $serviceType, $appointmentDate);
+        if (!$stmtService->execute()) {
+            throw new Exception("Service appointment insertion failed: " . $stmtService->error);
+        }
+        $stmtService->close();
+    }
+
+    $conn->commit();
+    echo json_encode(["message" => "Booking saved successfully", "bookingId" => $bookingId]);
+} catch (Exception $e) {
+    $conn->rollback();
+    http_response_code(500);
+    echo json_encode(["message" => "Error saving booking", "error" => $e->getMessage()]);
 }
 
 $conn->close();

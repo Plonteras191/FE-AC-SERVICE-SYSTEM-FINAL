@@ -29,11 +29,6 @@ const AdminLayout = () => {
             </NavLink>
           </li>
           <li>
-            <NavLink to="/admin/booking" className={({ isActive }) => isActive ? 'active' : ''}>
-              Booking
-            </NavLink>
-          </li>
-          <li>
             <NavLink to="/admin/admin-booking" className={({ isActive }) => isActive ? 'active' : ''}>
               Admin Booking
             </NavLink>
