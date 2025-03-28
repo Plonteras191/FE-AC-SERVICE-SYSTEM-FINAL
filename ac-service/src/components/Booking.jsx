@@ -14,21 +14,21 @@ const serviceOptions = {
 const Booking = () => {
   const [selectedServices, setSelectedServices] = useState([]);
   const [serviceDates, setServiceDates] = useState({}); // Stores a date for each service
-  const [availableDates, setAvailableDates] = useState({}); // Stores available dates (as Date objects) per service
+  const [globalAvailableDates, setGlobalAvailableDates] = useState([]); // Global available dates as Date objects
   const [acTypes, setAcTypes] = useState([]);
   const navigate = useNavigate();
 
-  // Fetch available dates for a given service from the backend
-  const fetchAvailableDates = (service) => {
-    fetch(`http://localhost/AC-SERVICE-FINAL/backend/api/getAvailableDates.php?service=${service}`)
+  // Fetch global available dates from backend when component mounts
+  useEffect(() => {
+    fetch("http://localhost/AC-SERVICE-FINAL/backend/api/getAvailableDates.php?global=1&start=2025-01-01&end=2025-12-31")
       .then(response => response.json())
       .then(data => {
-        // Convert each date string into a Date object using parseISO to interpret it as local time
+        // Convert each date string into a Date object using parseISO to interpret as local time
         const dates = data.map(dateStr => parseISO(dateStr));
-        setAvailableDates(prev => ({ ...prev, [service]: dates }));
+        setGlobalAvailableDates(dates);
       })
       .catch(err => console.error("Error fetching available dates:", err));
-  };
+  }, []);
 
   // Handle selection/deselection of services
   const handleServiceChange = (e) => {
@@ -36,18 +36,12 @@ const Booking = () => {
     if (checked) {
       setSelectedServices(prev => [...prev, value]);
       setServiceDates(prev => ({ ...prev, [value]: null })); // Initialize date as null for new service
-      fetchAvailableDates(value); // Fetch available dates for this service immediately
     } else {
       setSelectedServices(prev => prev.filter(service => service !== value));
       setServiceDates(prev => {
         const newDates = { ...prev };
         delete newDates[value];
         return newDates;
-      });
-      setAvailableDates(prev => {
-        const newAvail = { ...prev };
-        delete newAvail[value];
-        return newAvail;
       });
     }
   };
@@ -67,10 +61,10 @@ const Booking = () => {
     setServiceDates(prev => ({ ...prev, [service]: date }));
   };
 
-  // Use filterDate to allow only available dates for a service
-  const isDateAvailable = (service) => (date) => {
-    if (!availableDates[service]) return true; // if data hasn't loaded, allow selection
-    return availableDates[service].some(avDate =>
+  // Global filter: allow only dates that are in the globalAvailableDates list
+  const isDateGloballyAvailable = (date) => {
+    if (globalAvailableDates.length === 0) return true; // if not loaded, allow selection
+    return globalAvailableDates.some(avDate =>
       avDate.toDateString() === date.toDateString()
     );
   };
@@ -86,13 +80,9 @@ const Booking = () => {
         alert(`Please select a date for ${serviceOptions[service]}.`);
         return;
       }
-      if (availableDates[service] && availableDates[service].length > 0) {
-        const selectedDateStr = selectedDate.toDateString();
-        const valid = availableDates[service].some(avDate => avDate.toDateString() === selectedDateStr);
-        if (!valid) {
-          alert(`The selected date for ${serviceOptions[service]} is no longer available. Please select another date.`);
-          return;
-        }
+      if (!isDateGloballyAvailable(selectedDate)) {
+        alert(`The selected date for ${serviceOptions[service]} is no longer available. Please select another date.`);
+        return;
       }
     }
 
@@ -142,45 +132,18 @@ const Booking = () => {
           {/* Customer Details Section */}
           <div className="customer-details">
             <label htmlFor="name">Name (required):</label>
-            <input
-              type="text"
-              id="name"
-              name="name"
-              placeholder="Your Name"
-              required
-              pattern="[A-Za-z ]+"
-              title="Name should contain only letters and spaces."
-            />
+            <input type="text" id="name" name="name" placeholder="Your Name" required pattern="[A-Za-z ]+" title="Name should contain only letters and spaces." />
             <label htmlFor="phone">Phone Number (required):</label>
-            <input
-              type="tel"
-              id="phone"
-              name="phone"
-              placeholder="Your Phone Number"
-              required
-              pattern="^[0-9]{11}$"
-              title="Phone number must be exactly 11 digits."
-            />
+            <input type="tel" id="phone" name="phone" placeholder="Your Phone Number" required pattern="^[0-9]{11}$" title="Phone number must be exactly 11 digits." />
             <label htmlFor="email">Email (optional):</label>
-            <input
-              type="email"
-              id="email"
-              name="email"
-              placeholder="Your Email"
-            />
+            <input type="email" id="email" name="email" placeholder="Your Email" />
           </div>
 
           {/* Address Section */}
           <div className="address-section">
             <h3>Address (required)</h3>
             <div className="complete-address">
-              <input
-                type="text"
-                id="completeAddress"
-                name="completeAddress"
-                placeholder="Enter complete address"
-                required
-              />
+              <input type="text" id="completeAddress" name="completeAddress" placeholder="Enter complete address" required />
             </div>
             <div className="address-inputs">
               <input type="text" name="street" placeholder="Street" required />
@@ -195,12 +158,7 @@ const Booking = () => {
             <div className="service-options">
               {Object.entries(serviceOptions).map(([key, label]) => (
                 <label key={key}>
-                  <input
-                    type="checkbox"
-                    value={key}
-                    checked={selectedServices.includes(key)}
-                    onChange={handleServiceChange}
-                  />
+                  <input type="checkbox" value={key} checked={selectedServices.includes(key)} onChange={handleServiceChange} />
                   {label}
                 </label>
               ))}
@@ -214,8 +172,8 @@ const Booking = () => {
                     <DatePicker
                       selected={serviceDates[service]}
                       onChange={(date) => handleServiceDateChange(service, date)}
-                      minDate={new Date()} // Only allow current/future dates
-                      filterDate={isDateAvailable(service)} // Restrict to available dates
+                      minDate={new Date()}
+                      filterDate={isDateGloballyAvailable} // Use the global available dates
                       placeholderText="Select a date"
                       required
                       dateFormat="yyyy-MM-dd"
@@ -231,30 +189,15 @@ const Booking = () => {
             <h3>AC Type (Select all that apply)</h3>
             <div className="ac-type-options">
               <label>
-                <input
-                  type="checkbox"
-                  value="Central"
-                  checked={acTypes.includes("Central")}
-                  onChange={handleACTypeChange}
-                />
+                <input type="checkbox" value="Central" checked={acTypes.includes("Central")} onChange={handleACTypeChange} />
                 Central
               </label>
               <label>
-                <input
-                  type="checkbox"
-                  value="Windows"
-                  checked={acTypes.includes("Windows")}
-                  onChange={handleACTypeChange}
-                />
+                <input type="checkbox" value="Windows" checked={acTypes.includes("Windows")} onChange={handleACTypeChange} />
                 Windows
               </label>
               <label>
-                <input
-                  type="checkbox"
-                  value="Split"
-                  checked={acTypes.includes("Split")}
-                  onChange={handleACTypeChange}
-                />
+                <input type="checkbox" value="Split" checked={acTypes.includes("Split")} onChange={handleACTypeChange} />
                 Split
               </label>
             </div>

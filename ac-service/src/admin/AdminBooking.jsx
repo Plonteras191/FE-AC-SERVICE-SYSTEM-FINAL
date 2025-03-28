@@ -1,7 +1,7 @@
-// src/pages/AdminBooking.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DatePicker from 'react-datepicker';
+import { parseISO, format } from 'date-fns';
 import "react-datepicker/dist/react-datepicker.css";
 import Modal from '../components/Modal';
 import '../styles/Booking.css';
@@ -15,15 +15,29 @@ const serviceOptions = {
 const AdminBooking = () => {
   const [selectedServices, setSelectedServices] = useState([]);
   const [serviceDates, setServiceDates] = useState({}); // Stores a date for each service
+  const [globalAvailableDates, setGlobalAvailableDates] = useState([]); // Global available dates as Date objects
   const [acTypes, setAcTypes] = useState([]);
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const navigate = useNavigate();
 
+  // Fetch global available dates from backend when component mounts
+  useEffect(() => {
+    fetch("http://localhost/AC-SERVICE-FINAL/backend/api/getAvailableDates.php?global=1&start=2025-01-01&end=2025-12-31")
+      .then(response => response.json())
+      .then(data => {
+        // Convert each date string into a Date object using parseISO to interpret as local time
+        const dates = data.map(dateStr => parseISO(dateStr));
+        setGlobalAvailableDates(dates);
+      })
+      .catch(err => console.error("Error fetching available dates:", err));
+  }, []);
+
+  // Handle selection/deselection of services
   const handleServiceChange = (e) => {
     const { value, checked } = e.target;
     if (checked) {
       setSelectedServices(prev => [...prev, value]);
-      setServiceDates(prev => ({ ...prev, [value]: null }));
+      setServiceDates(prev => ({ ...prev, [value]: null })); // Initialize date as null for new service
     } else {
       setSelectedServices(prev => prev.filter(service => service !== value));
       setServiceDates(prev => {
@@ -34,6 +48,7 @@ const AdminBooking = () => {
     }
   };
 
+  // Handle AC Type checkbox changes
   const handleACTypeChange = (e) => {
     const { value, checked } = e.target;
     if (checked) {
@@ -43,21 +58,37 @@ const AdminBooking = () => {
     }
   };
 
+  // Handle date change for a specific service type
   const handleServiceDateChange = (service, date) => {
     setServiceDates(prev => ({ ...prev, [service]: date }));
   };
 
+  // Global filter: allow only dates that are in the globalAvailableDates list
+  const isDateGloballyAvailable = (date) => {
+    if (globalAvailableDates.length === 0) return true; // if not loaded, allow selection
+    return globalAvailableDates.some(avDate =>
+      avDate.toDateString() === date.toDateString()
+    );
+  };
+
+  // Form submission: validate and send booking data to backend
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    // Validate that a date is selected for each chosen service
+    // Validate that a date is selected and still available for each chosen service
     for (const service of selectedServices) {
-      if (!serviceDates[service]) {
+      const selectedDate = serviceDates[service];
+      if (!selectedDate) {
         alert(`Please select a date for ${serviceOptions[service]}.`);
+        return;
+      }
+      if (!isDateGloballyAvailable(selectedDate)) {
+        alert(`The selected date for ${serviceOptions[service]} is no longer available. Please select another date.`);
         return;
       }
     }
 
+    // Prepare booking data for submission
     const formData = new FormData(e.target);
     const bookingData = {
       name: formData.get('name'),
@@ -67,25 +98,25 @@ const AdminBooking = () => {
       street: formData.get('street'),
       houseNo: formData.get('houseNo'),
       apartmentNo: formData.get('apartmentNo'),
+      // Construct the services array with their type and selected date formatted as YYYY-MM-DD using format()
       services: selectedServices.map(service => ({
         type: serviceOptions[service],
-        date: serviceDates[service] ? serviceDates[service].toISOString().slice(0, 10) : null,
+        date: serviceDates[service] ? format(serviceDates[service], 'yyyy-MM-dd') : null,
       })),
       acTypes,
     };
 
+    // POST booking data to the backend API endpoint
     fetch("http://localhost/AC-SERVICE-FINAL/backend/api/booking.php", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(bookingData),
     })
       .then(response => response.json())
       .then(responseData => {
         console.log("Response from backend:", responseData);
         if (responseData.bookingId) {
-          // Open the confirmation modal on success
+          // Open confirmation modal on success
           setIsConfirmModalOpen(true);
         } else {
           alert("Error saving booking: " + responseData.message);
@@ -96,13 +127,13 @@ const AdminBooking = () => {
       });
   };
 
-  // Modal confirmation: when admin confirms, navigate to admin dashboard (adjust path as needed)
+  // Modal confirmation: when admin confirms, navigate to admin dashboard
   const handleModalConfirm = () => {
     setIsConfirmModalOpen(false);
     navigate('/admin/dashboard');
   };
 
-  // If the admin cancels the confirmation, just close the modal (stay on current page)
+  // If admin cancels the modal, just close it
   const handleModalCancel = () => {
     setIsConfirmModalOpen(false);
   };
@@ -124,7 +155,6 @@ const AdminBooking = () => {
               pattern="[A-Za-z ]+"
               title="Name should contain only letters and spaces."
             />
-
             <label htmlFor="phone">Phone Number (required):</label>
             <input
               type="tel"
@@ -135,7 +165,6 @@ const AdminBooking = () => {
               pattern="^[0-9]{11}$"
               title="Phone number must be exactly 11 digits."
             />
-
             <label htmlFor="email">Email (optional):</label>
             <input
               type="email"
@@ -189,7 +218,8 @@ const AdminBooking = () => {
                     <DatePicker
                       selected={serviceDates[service]}
                       onChange={(date) => handleServiceDateChange(service, date)}
-                      minDate={new Date()} // Allow only current and future dates
+                      minDate={new Date()} // Only allow current/future dates
+                      filterDate={isDateGloballyAvailable} // Use global available dates
                       placeholderText="Select a date"
                       required
                       dateFormat="yyyy-MM-dd"
