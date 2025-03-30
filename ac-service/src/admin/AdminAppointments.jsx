@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import Modal from '../components/Modal';
+import { useNavigate } from 'react-router-dom';
 import '../styles/AdminAppointments.css';
 
 const AdminAppointments = () => {
   const [appointments, setAppointments] = useState([]);
   const [rescheduleInputs, setRescheduleInputs] = useState({});
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false); // Added state
   const [selectedAppointmentId, setSelectedAppointmentId] = useState(null);
+  const navigate = useNavigate();
 
   // Update endpoint URL based on your XAMPP folder structure
   const fetchUrl = "http://localhost/AC-SERVICE-FINAL/backend/api/appointments.php";
@@ -23,7 +25,7 @@ const AdminAppointments = () => {
         setAppointments(pending);
       })
       .catch(error => console.error("Error fetching appointments:", error));
-  }, []);
+  }, [fetchUrl]);
 
   // Delete (reject) appointment
   const handleCancelAppointment = async (id) => {
@@ -38,18 +40,18 @@ const AdminAppointments = () => {
   // Open modal to confirm rejection
   const openRejectModal = (id) => {
     setSelectedAppointmentId(id);
-    setIsModalOpen(true);
+    setIsConfirmModalOpen(true);
   };
 
   // Confirm rejection and delete appointment
   const handleConfirmReject = () => {
     handleCancelAppointment(selectedAppointmentId);
-    setIsModalOpen(false);
+    setIsConfirmModalOpen(false);
     setSelectedAppointmentId(null);
   };
 
   const handleCancelModal = () => {
-    setIsModalOpen(false);
+    setIsConfirmModalOpen(false);
     setSelectedAppointmentId(null);
   };
 
@@ -59,10 +61,8 @@ const AdminAppointments = () => {
     setRescheduleInputs(prev => {
       const newState = { ...prev };
       if (newState[key] !== undefined) {
-        // Input already open, so cancel it
         delete newState[key];
       } else {
-        // Open input (initial value empty)
         newState[key] = "";
       }
       return newState;
@@ -82,15 +82,11 @@ const AdminAppointments = () => {
     if (!newDate) return;
     const payload = { service_name: serviceType, new_date: newDate };
     try {
-      // Send PUT request to update the service's date within the appointment
       const response = await axios.put(`${fetchUrl}?action=reschedule&id=${appointmentId}`, payload);
-      // Instead of checking response.data.success, we simply check if there's no error property
       if (response.data && !response.data.error) {
-        // Update the appointment in state with the updated appointment returned by the backend
         setAppointments(prev =>
           prev.map(appt => (appt.id === appointmentId ? response.data : appt))
         );
-        // Remove the inline input for that service
         setRescheduleInputs(prev => {
           const newState = { ...prev };
           delete newState[key];
@@ -114,16 +110,25 @@ const AdminAppointments = () => {
     });
   };
 
-  // Accept appointment by sending a POST request with query param action=accept
+  // Accept appointment by sending a POST request with action=accept.
+  // Then, if an email exists, trigger an email notification.
   const handleAcceptAppointment = async (id) => {
     try {
       const response = await axios.post(`${fetchUrl}?action=accept&id=${id}`);
-      // Check if the returned appointment has status "Accepted"
       if (
         response.data &&
         response.data.status &&
         response.data.status.toLowerCase() === 'accepted'
       ) {
+        // If an email is provided, send email notification
+        if (response.data.email) {
+          await axios.post("http://localhost/AC-SERVICE-FINAL/backend/api/sendEmailNotification.php", {
+            email: response.data.email,
+            appointmentId: id,
+            name: response.data.name,
+            message: "Your appointment has been accepted."
+          });
+        }
         setAppointments(prev => prev.filter(appt => appt.id !== id));
       }
     } catch (error) {
@@ -138,6 +143,12 @@ const AdminAppointments = () => {
     } catch (error) {
       return [];
     }
+  };
+
+  // Modal confirmation: when admin confirms, navigate to admin dashboard
+  const handleModalConfirm = () => {
+    setIsConfirmModalOpen(false);
+    navigate('/admin/dashboard');
   };
 
   return (
@@ -231,9 +242,10 @@ const AdminAppointments = () => {
         </table>
       )}
       <Modal
-        isOpen={isModalOpen}
-        message="Are you sure you want to reject this appointment?"
-        onConfirm={handleConfirmReject}
+        isOpen={isConfirmModalOpen}
+        title="Booking Confirmed"
+        message="The booking has been successfully saved."
+        onConfirm={handleModalConfirm}
         onCancel={handleCancelModal}
       />
     </div>

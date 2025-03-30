@@ -8,12 +8,7 @@
     background: #f7f9fc;
   }
 
-  .disabled-date {
-    color: #ccc;
-    pointer-events: none;
-    opacity: 0.5;
-  }
-  
+
   
   
   .booking-box {
