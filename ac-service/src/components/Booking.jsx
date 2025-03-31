@@ -163,7 +163,6 @@ const Booking = () => {
                 </label>
               ))}
             </div>
-            {/* Date pickers for each selected service */}
             {selectedServices.length > 0 && (
               <div className="service-dates">
                 {selectedServices.map(service => (
@@ -173,10 +172,12 @@ const Booking = () => {
                       selected={serviceDates[service]}
                       onChange={(date) => handleServiceDateChange(service, date)}
                       minDate={new Date()}
-                      filterDate={isDateGloballyAvailable} // Use the global available dates
+                      filterDate={isDateGloballyAvailable}
                       placeholderText="Select a date"
                       required
                       dateFormat="yyyy-MM-dd"
+                      // Add a custom class to style the calendar dropdown
+                      calendarClassName="custom-calendar"
                     />
                   </div>
                 ))}

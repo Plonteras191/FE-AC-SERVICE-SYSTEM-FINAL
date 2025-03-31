@@ -4,36 +4,43 @@ import axios from 'axios';
 import '../styles/Dashboard.css';
 
 const Dashboard = () => {
-  const [confirmedAppointments, setConfirmedAppointments] = useState([]);
+  const [acceptedAppointments, setAcceptedAppointments] = useState([]);
 
-  // Fetch confirmed (accepted) appointments from the backend on component mount
   useEffect(() => {
     axios.get("http://localhost/AC-SERVICE-FINAL/backend/api/appointments.php")
       .then(response => {
-        // Filter for appointments that are "Accepted"
-        const confirmed = response.data.filter(
-          appt => appt.status && appt.status.toLowerCase() === 'accepted'
+        let data = response.data;
+        if (!Array.isArray(data)) data = [data];
+        // Show only appointments with status "accepted" (pending for completion)
+        const accepted = data.filter(appt => 
+          appt.status && appt.status.toLowerCase() === 'accepted'
         );
-        setConfirmedAppointments(confirmed);
+        setAcceptedAppointments(accepted);
       })
       .catch(error => console.error("Error fetching appointments:", error));
   }, []);
 
-  // Complete appointment by sending a PUT request to update its status to "Complete"
+  // Complete appointment: update its status to "Completed"
   const completeAppointment = (id) => {
-    axios.put(`http://localhost/AC-SERVICE-FINAL/backend/api/appointments.php?complete&id=${id}`)
+    axios.post(`http://localhost/AC-SERVICE-FINAL/backend/api/appointments.php?action=complete&id=${id}`)
       .then(response => {
         const updatedAppointment = response.data;
-        // Update the confirmedAppointments list with the updated appointment
-        const updatedConfirmed = confirmedAppointments.map(app =>
-          app.id === id ? updatedAppointment : app
-        );
-        setConfirmedAppointments(updatedConfirmed);
+        // Store the completed appointment in localStorage for later processing
+        const stored = localStorage.getItem('completedAppointments');
+        const completedAppointments = stored ? JSON.parse(stored) : [];
+        completedAppointments.push(updatedAppointment);
+        localStorage.setItem('completedAppointments', JSON.stringify(completedAppointments));
+
+        // Remove the appointment from the Dashboard list
+        const updatedAccepted = acceptedAppointments.filter(app => app.id !== id);
+        setAcceptedAppointments(updatedAccepted);
+
+       
       })
       .catch(error => console.error("Error completing appointment:", error));
   };
 
-  // Utility function to parse services JSON string (if needed)
+  // Utility function to parse services JSON string
   const parseServices = (servicesStr) => {
     try {
       const services = JSON.parse(servicesStr);
@@ -48,9 +55,8 @@ const Dashboard = () => {
       <div className="dashboard-main">
         <h1>Admin Dashboard</h1>
         <div className="dashboard-section">
-          <h3>Confirmed Appointments</h3>
           <div className="appointment-box">
-            {confirmedAppointments.length > 0 ? (
+            {acceptedAppointments.length > 0 ? (
               <table className="appointments-table">
                 <thead>
                   <tr>
@@ -65,7 +71,7 @@ const Dashboard = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {confirmedAppointments.map((appointment) => (
+                  {acceptedAppointments.map((appointment) => (
                     <tr key={appointment.id}>
                       <td>{appointment.id}</td>
                       <td>{appointment.name}</td>
@@ -91,7 +97,7 @@ const Dashboard = () => {
                 </tbody>
               </table>
             ) : (
-              <p>No confirmed appointments.</p>
+              <p>No accepted appointments available.</p>
             )}
           </div>
         </div>

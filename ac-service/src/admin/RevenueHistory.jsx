@@ -1,16 +1,21 @@
 // src/components/RevenueHistory.jsx
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import '../styles/RevenueHistory.css';
 
 const RevenueHistory = () => {
   const [history, setHistory] = useState([]);
 
- 
+  // Load revenue history from the backend API on component mount
   useEffect(() => {
-    const storedHistory = localStorage.getItem('revenueHistory');
-    if (storedHistory) {
-      setHistory(JSON.parse(storedHistory));
-    }
+    axios.get("http://localhost/AC-SERVICE-FINAL/backend/api/getRevenueHistory.php")
+      .then(response => {
+        setHistory(response.data);
+      })
+      .catch(error => {
+        console.error("Error fetching revenue history:", error);
+        setHistory([]);
+      });
   }, []);
 
   return (
@@ -30,8 +35,8 @@ const RevenueHistory = () => {
             <tbody>
               {history.map((entry, index) => (
                 <tr key={index}>
-                  <td>{entry.date}</td>
-                  <td>{entry.total.toFixed(2)}</td>
+                  <td>{entry.revenue_date}</td>
+                  <td>{parseFloat(entry.total_revenue).toFixed(2)}</td>
                 </tr>
               ))}
             </tbody>

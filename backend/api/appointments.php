@@ -29,17 +29,34 @@ if ($method === 'GET') {
     exit;
 }
 
-elseif ($method === 'POST' && isset($_GET['action']) && $_GET['action'] === 'accept' && $id) {
-    // Accept an appointment: update its status to "Accepted"
-    $sql = "UPDATE bookings SET status='Accepted' WHERE id=$id";
+// POST branch for accepting or completing an appointment
+elseif ($method === 'POST' && isset($_GET['action']) && in_array($_GET['action'], ['accept', 'complete']) && $id) {
+    // Determine new status based on the action
+    $action = $_GET['action'];
+    if ($action === 'accept') {
+        $status = 'accepted';
+    } elseif ($action === 'complete') {
+        $status = 'completed';
+    } else {
+        http_response_code(400);
+        echo json_encode(["error" => "Invalid action"]);
+        exit;
+    }
+    
+    $sql = "UPDATE bookings SET status='$status' WHERE id=$id";
     if ($conn->query($sql)) {
-        // Return the updated appointment
+        // Fetch the updated appointment
         $result = $conn->query("SELECT * FROM bookings WHERE id=$id");
-        $updatedAppointment = $result->fetch_assoc();
-        echo json_encode($updatedAppointment);
+        if ($result) {
+            $updatedAppointment = $result->fetch_assoc();
+            echo json_encode($updatedAppointment);
+        } else {
+            http_response_code(500);
+            echo json_encode(["error" => "Failed to retrieve updated appointment: " . $conn->error]);
+        }
     } else {
         http_response_code(500);
-        echo json_encode(["error" => "Failed to update appointment"]);
+        echo json_encode(["error" => "Failed to update appointment: " . $conn->error]);
     }
     exit;
 }
@@ -95,13 +112,12 @@ elseif ($method === 'PUT' && isset($_GET['action']) && $_GET['action'] === 'resc
     // Update the appointment record with the new services JSON
     $updateSql = "UPDATE bookings SET services = '$newServicesJson' WHERE id = $id";
     if ($conn->query($updateSql)) {
-        // Return the updated appointment
         $result = $conn->query("SELECT * FROM bookings WHERE id = $id");
         $updatedAppointment = $result->fetch_assoc();
         echo json_encode($updatedAppointment);
     } else {
         http_response_code(500);
-        echo json_encode(["error" => "Failed to update appointment"]);
+        echo json_encode(["error" => "Failed to update appointment: " . $conn->error]);
     }
     exit;
 }
@@ -113,7 +129,7 @@ elseif ($method === 'DELETE' && $id) {
         echo json_encode(["message" => "Appointment deleted"]);
     } else {
         http_response_code(500);
-        echo json_encode(["error" => "Failed to delete appointment"]);
+        echo json_encode(["error" => "Failed to delete appointment: " . $conn->error]);
     }
     exit;
 }

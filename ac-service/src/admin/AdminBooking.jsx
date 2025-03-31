@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DatePicker from 'react-datepicker';
-import { parseISO, format } from 'date-fns';
+import { parse, format } from 'date-fns'; // Changed from parseISO to parse
 import "react-datepicker/dist/react-datepicker.css";
 import Modal from '../components/Modal';
 import '../styles/Booking.css';
@@ -25,8 +25,9 @@ const AdminBooking = () => {
     fetch("http://localhost/AC-SERVICE-FINAL/backend/api/getAvailableDates.php?global=1&start=2025-01-01&end=2025-12-31")
       .then(response => response.json())
       .then(data => {
-        // Convert each date string into a Date object using parseISO to interpret as local time
-        const dates = data.map(dateStr => parseISO(dateStr));
+        // Convert each date string into a Date object using parse() to interpret it as local time.
+        // This avoids the UTC interpretation problem that happens with parseISO.
+        const dates = data.map(dateStr => parse(dateStr, 'yyyy-MM-dd', new Date()));
         setGlobalAvailableDates(dates);
       })
       .catch(err => console.error("Error fetching available dates:", err));
@@ -119,7 +120,7 @@ const AdminBooking = () => {
           // Open confirmation modal on success
           setIsConfirmModalOpen(true);
         } else {
-          alert("Error saving booking: " + responseData.message);
+          alert("Sorry Fully Booked: " + responseData.message);
         }
       })
       .catch(error => {

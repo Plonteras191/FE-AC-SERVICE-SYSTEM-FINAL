@@ -215,5 +215,26 @@
     border-color: #007BFF;
     outline: none;
   }
+
+  /* Example: Custom styling for the DatePicker calendar */
+.custom-calendar {
+  background-color: #f7f9fc;
+  border: 1px solid #007BFF;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.custom-calendar .react-datepicker__day--selected,
+.custom-calendar .react-datepicker__day--keyboard-selected {
+  background-color: #007BFF;
+  color: #fff;
+}
+
+.custom-calendar .react-datepicker__header {
+  background-color: #007BFF;
+  color: #fff;
+  border-bottom: none;
+}
+
   
   

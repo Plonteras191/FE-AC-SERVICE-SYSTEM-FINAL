@@ -7,7 +7,7 @@ const Revenue = () => {
   const [revenueData, setRevenueData] = useState({});
   const [totalRevenue, setTotalRevenue] = useState(0);
 
-  // On mount, load appointments from localStorage's "completedAppointments"
+  // On mount, load completed appointments from localStorage's "completedAppointments"
   useEffect(() => {
     const storedAppointments = localStorage.getItem('completedAppointments');
     if (storedAppointments) {
@@ -35,8 +35,8 @@ const Revenue = () => {
     setTotalRevenue(total);
   };
 
-  // Save computed revenue to revenue history, clear revenue inputs,
-  // and remove processed appointments from the Revenue page.
+  // Save computed revenue to revenue history via the backend API,
+  // then clear localStorage and reset the component state without navigating away.
   const saveRevenue = () => {
     // Validate that every appointment has a revenue amount
     const missingInput = appointments.some(appt => {
@@ -51,23 +51,50 @@ const Revenue = () => {
 
     // Create a new revenue record with the current date and computed total
     const newEntry = {
-      date: new Date().toLocaleDateString(),
-      total: totalRevenue,
+      revenue_date: new Date().toISOString().slice(0, 10), // Format: 'YYYY-MM-DD'
+      total_revenue: totalRevenue,
     };
 
-    // Save the new revenue record to localStorage under "revenueHistory"
-    const storedHistory = localStorage.getItem('revenueHistory');
-    const history = storedHistory ? JSON.parse(storedHistory) : [];
-    history.push(newEntry);
-    localStorage.setItem('revenueHistory', JSON.stringify(history));
+    // POST the new revenue record to the backend API endpoint
+    fetch("http://localhost/AC-SERVICE-FINAL/backend/api/saveRevenueHistory.php", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(newEntry),
+    })
+      .then(response => response.json())
+      .then(responseData => {
+        if (responseData.id) {
+          
+          // Clear localStorage for completed appointments and reset component state
+          localStorage.removeItem('completedAppointments');
+          setAppointments([]);
+          setRevenueData({});
+          setTotalRevenue(0);
+        } else {
+          alert("Error saving revenue: " + (responseData.error || "Unknown error."));
+        }
+      })
+      .catch(error => {
+        console.error("Error saving revenue:", error);
+        alert("Error saving revenue. Please try again.");
+      });
+  };
 
-    // Clear revenue data for new entries and reset totalRevenue
-    setRevenueData({});
-    setTotalRevenue(0);
-
-    // Remove the computed appointments from the Revenue page
-    localStorage.removeItem('completedAppointments');
-    setAppointments([]);
+  // Helper function: extract service info from the services JSON string.
+  // Combines all service types and dates.
+  const getServiceInfo = (servicesStr) => {
+    if (!servicesStr) return { service: "N/A", date: "N/A" };
+    try {
+      const services = JSON.parse(servicesStr);
+      if (services.length > 0) {
+        const serviceNames = services.map(s => s.type).join(', ');
+        const serviceDates = services.map(s => s.date).join(', ');
+        return { service: serviceNames, date: serviceDates };
+      }
+    } catch (error) {
+      console.error("Error parsing services:", error);
+    }
+    return { service: "N/A", date: "N/A" };
   };
 
   return (
@@ -88,22 +115,25 @@ const Revenue = () => {
               </tr>
             </thead>
             <tbody>
-              {appointments.map(appt => (
-                <tr key={appt.id}>
-                  <td>{appt.id}</td>
-                  <td>{appt.customer}</td>
-                  <td>{appt.service}</td>
-                  <td>{appt.date}</td>
-                  <td>
-                    <input
-                      type="number"
-                      placeholder="0.00"
-                      value={revenueData[appt.id] || ''}
-                      onChange={(e) => handleInputChange(appt.id, e.target.value)}
-                    />
-                  </td>
-                </tr>
-              ))}
+              {appointments.map(appt => {
+                const { service, date } = getServiceInfo(appt.services);
+                return (
+                  <tr key={appt.id}>
+                    <td>{appt.id}</td>
+                    <td>{appt.customer || appt.name}</td>
+                    <td>{service}</td>
+                    <td>{date}</td>
+                    <td>
+                      <input
+                        type="number"
+                        placeholder="0.00"
+                        value={revenueData[appt.id] || ''}
+                        onChange={(e) => handleInputChange(appt.id, e.target.value)}
+                      />
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         )}

@@ -7,7 +7,7 @@ import '../styles/AdminAppointments.css';
 const AdminAppointments = () => {
   const [appointments, setAppointments] = useState([]);
   const [rescheduleInputs, setRescheduleInputs] = useState({});
-  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false); // Added state
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const [selectedAppointmentId, setSelectedAppointmentId] = useState(null);
   const navigate = useNavigate();
 
@@ -48,6 +48,7 @@ const AdminAppointments = () => {
     handleCancelAppointment(selectedAppointmentId);
     setIsConfirmModalOpen(false);
     setSelectedAppointmentId(null);
+    // Removed navigation call so it remains on the same page.
   };
 
   const handleCancelModal = () => {
@@ -145,10 +146,11 @@ const AdminAppointments = () => {
     }
   };
 
-  // Modal confirmation: when admin confirms, navigate to admin dashboard
+  // Removed navigate() call in modal confirmation to remain on the page.
   const handleModalConfirm = () => {
     setIsConfirmModalOpen(false);
-    navigate('/admin/dashboard');
+    // Instead of navigating away, you could show a success message.
+    // If you want to navigate, update the destination route here.
   };
 
   return (
@@ -243,9 +245,9 @@ const AdminAppointments = () => {
       )}
       <Modal
         isOpen={isConfirmModalOpen}
-        title="Booking Confirmed"
-        message="The booking has been successfully saved."
-        onConfirm={handleModalConfirm}
+        title="Confirm Rejection"
+        message="Are you sure you want to reject this appointment?"
+        onConfirm={handleConfirmReject}
         onCancel={handleCancelModal}
       />
     </div>
