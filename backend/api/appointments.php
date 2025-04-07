@@ -18,13 +18,52 @@ if ($method === 'OPTIONS') {
 }
 
 if ($method === 'GET') {
-    // Fetch all appointments from the "bookings" table
-    $sql = "SELECT * FROM bookings";
+    // Fetch all appointments with their services and AC types
+    $sql = "SELECT b.*, 
+            GROUP_CONCAT(DISTINCT bs.service_type, ':', bs.appointment_date SEPARATOR '|') as services,
+            GROUP_CONCAT(DISTINCT ba.ac_type SEPARATOR ',') as ac_types
+            FROM bookings b
+            LEFT JOIN booking_services bs ON b.id = bs.booking_id
+            LEFT JOIN booking_actypes ba ON b.id = ba.booking_id
+            GROUP BY b.id";
+    
     $result = $conn->query($sql);
+    if (!$result) {
+        http_response_code(500);
+        echo json_encode(["error" => "Database error: " . $conn->error]);
+        exit;
+    }
+    
     $appointments = [];
     while ($row = $result->fetch_assoc()) {
+        // Convert pipe-separated services to JSON format for frontend compatibility
+        if (!empty($row['services'])) {
+            $servicesArray = [];
+            $services = explode('|', $row['services']);
+            foreach ($services as $service) {
+                $parts = explode(':', $service);
+                if (count($parts) === 2) {
+                    $servicesArray[] = [
+                        'type' => $parts[0],
+                        'date' => $parts[1]
+                    ];
+                }
+            }
+            $row['services'] = json_encode($servicesArray);
+        } else {
+            $row['services'] = json_encode([]);
+        }
+        
+        // Convert comma-separated AC types to array
+        if (!empty($row['ac_types'])) {
+            $row['ac_types'] = explode(',', $row['ac_types']);
+        } else {
+            $row['ac_types'] = [];
+        }
+        
         $appointments[] = $row;
     }
+    
     echo json_encode($appointments);
     exit;
 }
@@ -45,10 +84,45 @@ elseif ($method === 'POST' && isset($_GET['action']) && in_array($_GET['action']
     
     $sql = "UPDATE bookings SET status='$status' WHERE id=$id";
     if ($conn->query($sql)) {
-        // Fetch the updated appointment
-        $result = $conn->query("SELECT * FROM bookings WHERE id=$id");
-        if ($result) {
+        // Fetch the updated appointment with services and AC types
+        $sql = "SELECT b.*, 
+                GROUP_CONCAT(DISTINCT bs.service_type, ':', bs.appointment_date SEPARATOR '|') as services,
+                GROUP_CONCAT(DISTINCT ba.ac_type SEPARATOR ',') as ac_types
+                FROM bookings b
+                LEFT JOIN booking_services bs ON b.id = bs.booking_id
+                LEFT JOIN booking_actypes ba ON b.id = ba.booking_id
+                WHERE b.id = $id
+                GROUP BY b.id";
+        
+        $result = $conn->query($sql);
+        if ($result && $result->num_rows > 0) {
             $updatedAppointment = $result->fetch_assoc();
+            
+            // Convert pipe-separated services to JSON format
+            if (!empty($updatedAppointment['services'])) {
+                $servicesArray = [];
+                $services = explode('|', $updatedAppointment['services']);
+                foreach ($services as $service) {
+                    $parts = explode(':', $service);
+                    if (count($parts) === 2) {
+                        $servicesArray[] = [
+                            'type' => $parts[0],
+                            'date' => $parts[1]
+                        ];
+                    }
+                }
+                $updatedAppointment['services'] = json_encode($servicesArray);
+            } else {
+                $updatedAppointment['services'] = json_encode([]);
+            }
+            
+            // Convert comma-separated AC types to array
+            if (!empty($updatedAppointment['ac_types'])) {
+                $updatedAppointment['ac_types'] = explode(',', $updatedAppointment['ac_types']);
+            } else {
+                $updatedAppointment['ac_types'] = [];
+            }
+            
             echo json_encode($updatedAppointment);
         } else {
             http_response_code(500);
@@ -62,8 +136,7 @@ elseif ($method === 'POST' && isset($_GET['action']) && in_array($_GET['action']
 }
 
 elseif ($method === 'PUT' && isset($_GET['action']) && $_GET['action'] === 'reschedule' && $id) {
-    // Reschedule a service within an appointment.
-    // Expect a JSON payload with "service_name" and "new_date".
+    // Reschedule a service within an appointment
     $data = json_decode(file_get_contents("php://input"), true);
     if (!isset($data['service_name']) || !isset($data['new_date'])) {
         http_response_code(400);
@@ -74,47 +147,56 @@ elseif ($method === 'PUT' && isset($_GET['action']) && $_GET['action'] === 'resc
     $serviceName = $conn->real_escape_string($data['service_name']);
     $newDate = $conn->real_escape_string($data['new_date']);
     
-    // Fetch the current appointment
-    $sql = "SELECT * FROM bookings WHERE id = $id";
-    $result = $conn->query($sql);
-    if (!$result || $result->num_rows === 0) {
-        http_response_code(404);
-        echo json_encode(["error" => "Appointment not found"]);
-        exit;
-    }
-    $appointment = $result->fetch_assoc();
+    // Update the booking_services table
+    $sql = "UPDATE booking_services 
+            SET appointment_date = '$newDate' 
+            WHERE booking_id = $id AND service_type = '$serviceName'";
     
-    // Decode the "services" field (JSON)
-    $services = json_decode($appointment['services'], true);
-    if (!is_array($services)) {
-        http_response_code(500);
-        echo json_encode(["error" => "Services data is corrupted"]);
-        exit;
-    }
-    
-    // Update the service's date that matches the provided service_name
-    $updated = false;
-    foreach ($services as &$service) {
-        if ($service['type'] === $serviceName) {
-            $service['date'] = $newDate;
-            $updated = true;
+    if ($conn->query($sql)) {
+        // Return the updated appointment with all its details
+        $sql = "SELECT b.*, 
+                GROUP_CONCAT(DISTINCT bs.service_type, ':', bs.appointment_date SEPARATOR '|') as services,
+                GROUP_CONCAT(DISTINCT ba.ac_type SEPARATOR ',') as ac_types
+                FROM bookings b
+                LEFT JOIN booking_services bs ON b.id = bs.booking_id
+                LEFT JOIN booking_actypes ba ON b.id = ba.booking_id
+                WHERE b.id = $id
+                GROUP BY b.id";
+        
+        $result = $conn->query($sql);
+        if ($result && $result->num_rows > 0) {
+            $updatedAppointment = $result->fetch_assoc();
+            
+            // Convert pipe-separated services to JSON format
+            if (!empty($updatedAppointment['services'])) {
+                $servicesArray = [];
+                $services = explode('|', $updatedAppointment['services']);
+                foreach ($services as $service) {
+                    $parts = explode(':', $service);
+                    if (count($parts) === 2) {
+                        $servicesArray[] = [
+                            'type' => $parts[0],
+                            'date' => $parts[1]
+                        ];
+                    }
+                }
+                $updatedAppointment['services'] = json_encode($servicesArray);
+            } else {
+                $updatedAppointment['services'] = json_encode([]);
+            }
+            
+            // Convert comma-separated AC types to array
+            if (!empty($updatedAppointment['ac_types'])) {
+                $updatedAppointment['ac_types'] = explode(',', $updatedAppointment['ac_types']);
+            } else {
+                $updatedAppointment['ac_types'] = [];
+            }
+            
+            echo json_encode($updatedAppointment);
+        } else {
+            http_response_code(500);
+            echo json_encode(["error" => "Failed to retrieve updated appointment: " . $conn->error]);
         }
-    }
-    if (!$updated) {
-        http_response_code(404);
-        echo json_encode(["error" => "Service not found"]);
-        exit;
-    }
-    
-    // Re-encode the updated services array to JSON
-    $newServicesJson = json_encode($services);
-    
-    // Update the appointment record with the new services JSON
-    $updateSql = "UPDATE bookings SET services = '$newServicesJson' WHERE id = $id";
-    if ($conn->query($updateSql)) {
-        $result = $conn->query("SELECT * FROM bookings WHERE id = $id");
-        $updatedAppointment = $result->fetch_assoc();
-        echo json_encode($updatedAppointment);
     } else {
         http_response_code(500);
         echo json_encode(["error" => "Failed to update appointment: " . $conn->error]);
@@ -123,7 +205,7 @@ elseif ($method === 'PUT' && isset($_GET['action']) && $_GET['action'] === 'resc
 }
 
 elseif ($method === 'DELETE' && $id) {
-    // Reject (delete) an appointment
+    // Delete an appointment - the cascade delete will remove related services and AC types
     $sql = "DELETE FROM bookings WHERE id = $id";
     if ($conn->query($sql)) {
         echo json_encode(["message" => "Appointment deleted"]);

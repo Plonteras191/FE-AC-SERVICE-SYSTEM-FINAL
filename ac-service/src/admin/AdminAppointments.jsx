@@ -48,7 +48,6 @@ const AdminAppointments = () => {
     handleCancelAppointment(selectedAppointmentId);
     setIsConfirmModalOpen(false);
     setSelectedAppointmentId(null);
-    // Removed navigation call so it remains on the same page.
   };
 
   const handleCancelModal = () => {
@@ -57,8 +56,8 @@ const AdminAppointments = () => {
   };
 
   // Toggle inline reschedule input for a given appointment service
-  const toggleRescheduleInput = (appointmentId, serviceType) => {
-    const key = `${appointmentId}-${serviceType}`;
+  const toggleRescheduleInput = (appointmentId, serviceType, index) => {
+    const key = `${appointmentId}-${serviceType}-${index}`;
     setRescheduleInputs(prev => {
       const newState = { ...prev };
       if (newState[key] !== undefined) {
@@ -71,14 +70,14 @@ const AdminAppointments = () => {
   };
 
   // Handle change for inline reschedule input
-  const handleRescheduleInputChange = (appointmentId, serviceType, value) => {
-    const key = `${appointmentId}-${serviceType}`;
+  const handleRescheduleInputChange = (appointmentId, serviceType, index, value) => {
+    const key = `${appointmentId}-${serviceType}-${index}`;
     setRescheduleInputs(prev => ({ ...prev, [key]: value }));
   };
 
   // Confirm reschedule for a specific service in an appointment
-  const handleServiceRescheduleConfirm = async (appointmentId, serviceType) => {
-    const key = `${appointmentId}-${serviceType}`;
+  const handleServiceRescheduleConfirm = async (appointmentId, serviceType, index) => {
+    const key = `${appointmentId}-${serviceType}-${index}`;
     const newDate = rescheduleInputs[key];
     if (!newDate) return;
     const payload = { service_name: serviceType, new_date: newDate };
@@ -102,8 +101,8 @@ const AdminAppointments = () => {
   };
 
   // Cancel inline reschedule input for a specific service
-  const handleRescheduleCancel = (appointmentId, serviceType) => {
-    const key = `${appointmentId}-${serviceType}`;
+  const handleRescheduleCancel = (appointmentId, serviceType, index) => {
+    const key = `${appointmentId}-${serviceType}-${index}`;
     setRescheduleInputs(prev => {
       const newState = { ...prev };
       delete newState[key];
@@ -111,8 +110,7 @@ const AdminAppointments = () => {
     });
   };
 
-  // Accept appointment by sending a POST request with action=accept.
-  // Then, if an email exists, trigger an email notification.
+  // Accept appointment by sending a POST request with action=accept
   const handleAcceptAppointment = async (id) => {
     try {
       const response = await axios.post(`${fetchUrl}?action=accept&id=${id}`);
@@ -142,15 +140,15 @@ const AdminAppointments = () => {
     try {
       return JSON.parse(servicesStr);
     } catch (error) {
+      console.error("Error parsing services:", error);
       return [];
     }
   };
 
-  // Removed navigate() call in modal confirmation to remain on the page.
-  const handleModalConfirm = () => {
-    setIsConfirmModalOpen(false);
-    // Instead of navigating away, you could show a success message.
-    // If you want to navigate, update the destination route here.
+  // Function to display AC types with numbering
+  const renderAcTypes = (acTypes) => {
+    if (!acTypes || acTypes.length === 0) return 'N/A';
+    return acTypes.map((ac, index) => `${index + 1}. ${ac}`).join(', ');
   };
 
   return (
@@ -167,6 +165,7 @@ const AdminAppointments = () => {
               <th>Phone</th>
               <th>Email</th>
               <th>Service(s)</th>
+              <th>AC Type(s)</th>
               <th>Address</th>
               <th>Status</th>
               <th>Actions</th>
@@ -180,34 +179,34 @@ const AdminAppointments = () => {
                   <td>{appt.id}</td>
                   <td>{appt.name}</td>
                   <td>{appt.phone}</td>
-                  <td>{appt.email}</td>
+                  <td>{appt.email || 'N/A'}</td>
                   <td>
                     {services.length > 0 ? (
-                      services.map((s) => {
-                        const key = `${appt.id}-${s.type}`;
+                      services.map((s, index) => {
+                        const key = `${appt.id}-${s.type}-${index}`;
                         return (
                           <div key={key}>
-                            <span>{s.type} on {s.date}</span>
+                            <span>{index + 1}. {s.type} on {s.date}</span>
                             {rescheduleInputs[key] !== undefined ? (
                               <div className="reschedule-input-container">
                                 <input
                                   type="date"
                                   value={rescheduleInputs[key]}
                                   onChange={(e) =>
-                                    handleRescheduleInputChange(appt.id, s.type, e.target.value)
+                                    handleRescheduleInputChange(appt.id, s.type, index, e.target.value)
                                   }
                                   className="reschedule-date-input"
                                 />
                                 <button
                                   className="confirm-button"
-                                  onClick={() => handleServiceRescheduleConfirm(appt.id, s.type)}
+                                  onClick={() => handleServiceRescheduleConfirm(appt.id, s.type, index)}
                                   disabled={!rescheduleInputs[key]}
                                 >
                                   Confirm
                                 </button>
                                 <button
                                   className="cancel-button"
-                                  onClick={() => handleRescheduleCancel(appt.id, s.type)}
+                                  onClick={() => handleRescheduleCancel(appt.id, s.type, index)}
                                 >
                                   Cancel
                                 </button>
@@ -215,7 +214,7 @@ const AdminAppointments = () => {
                             ) : (
                               <button
                                 className="reschedule-button"
-                                onClick={() => toggleRescheduleInput(appt.id, s.type)}
+                                onClick={() => toggleRescheduleInput(appt.id, s.type, index)}
                               >
                                 Reschedule
                               </button>
@@ -227,6 +226,7 @@ const AdminAppointments = () => {
                       'N/A'
                     )}
                   </td>
+                  <td>{renderAcTypes(appt.ac_types)}</td>
                   <td>{appt.complete_address}</td>
                   <td>{appt.status || 'Pending'}</td>
                   <td>

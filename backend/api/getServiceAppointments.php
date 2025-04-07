@@ -15,8 +15,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 
 require '../database.php'; // Adjust the path if needed
 
-// Query the bookings table to return only accepted appointments
-$sql = "SELECT id, services, status FROM bookings WHERE status = 'Accepted'";
+// Query the bookings table to return accepted appointments with customer name
+$sql = "SELECT b.id, b.name, 
+               GROUP_CONCAT(CONCAT(bs.service_type, ':', bs.appointment_date) SEPARATOR '|') AS services,
+               b.status
+        FROM bookings b
+        LEFT JOIN booking_services bs ON b.id = bs.booking_id
+        WHERE b.status = 'Accepted'
+        GROUP BY b.id";
+
 $result = $conn->query($sql);
 
 if (!$result) {
@@ -29,17 +36,21 @@ $serviceAppointments = [];
 
 while ($row = $result->fetch_assoc()) {
     $bookingId = $row['id'];
-    $services = json_decode($row['services'], true);
-    // If the services field contains a valid array, iterate each service
-    if (is_array($services)) {
+    $name = $row['name']; // Get customer's name
+    $servicesStr = $row['services'];
+    
+    // Process each service in the concatenated string
+    if (!empty($servicesStr)) {
+        $services = explode('|', $servicesStr);
         foreach ($services as $service) {
-            // Check that required keys exist. If "time" is missing, default to an empty string.
-            if (isset($service['type'], $service['date'])) {
+            $parts = explode(':', $service);
+            if (count($parts) === 2) {
                 $serviceAppointments[] = [
                     "bookingId" => $bookingId,
-                    "service"   => $service['type'],
-                    "date"      => $service['date'],
-                    "time"      => isset($service['time']) ? $service['time'] : "",
+                    "name"      => $name, // Include name in the output
+                    "service"   => $parts[0],
+                    "date"      => $parts[1],
+                    "time"      => "", // Set default if time is not used
                     "status"    => $row['status']
                 ];
             }

@@ -34,20 +34,25 @@ const Dashboard = () => {
         // Remove the appointment from the Dashboard list
         const updatedAccepted = acceptedAppointments.filter(app => app.id !== id);
         setAcceptedAppointments(updatedAccepted);
-
-       
       })
       .catch(error => console.error("Error completing appointment:", error));
   };
 
-  // Utility function to parse services JSON string
+  // Utility function to parse services JSON string with numbering
   const parseServices = (servicesStr) => {
     try {
       const services = JSON.parse(servicesStr);
-      return services.map(s => `${s.type} on ${s.date}`).join(', ');
+      return services.map((s, index) => `${index + 1}. ${s.type} on ${s.date}`).join(', ');
     } catch (error) {
-      return servicesStr;
+      console.error("Error parsing services:", error);
+      return 'N/A';
     }
+  };
+
+  // Function to display AC types with numbering
+  const renderAcTypes = (acTypes) => {
+    if (!acTypes || acTypes.length === 0) return 'N/A';
+    return acTypes.map((ac, index) => `${index + 1}. ${ac}`).join(', ');
   };
 
   return (
@@ -65,6 +70,7 @@ const Dashboard = () => {
                     <th>Phone</th>
                     <th>Email</th>
                     <th>Service(s)</th>
+                    <th>AC Type(s)</th>
                     <th>Address</th>
                     <th>Status</th>
                     <th>Action</th>
@@ -76,12 +82,13 @@ const Dashboard = () => {
                       <td>{appointment.id}</td>
                       <td>{appointment.name}</td>
                       <td>{appointment.phone}</td>
-                      <td>{appointment.email}</td>
+                      <td>{appointment.email || 'N/A'}</td>
                       <td>
                         {appointment.services 
                           ? parseServices(appointment.services)
                           : 'N/A'}
                       </td>
+                      <td>{renderAcTypes(appointment.ac_types)}</td>
                       <td>{appointment.complete_address}</td>
                       <td>{appointment.status || 'Pending'}</td>
                       <td>

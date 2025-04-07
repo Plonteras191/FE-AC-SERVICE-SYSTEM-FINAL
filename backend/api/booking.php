@@ -35,20 +35,16 @@ $apartmentNo     = isset($data['apartmentNo']) ? $conn->real_escape_string($data
 $servicesArray   = $data['services'];
 $acTypes         = isset($data['acTypes']) ? $data['acTypes'] : [];
 
-$servicesJson = json_encode($servicesArray);
-$acTypesJson  = json_encode($acTypes);
-
 // Begin transaction
 $conn->begin_transaction();
 
 try {
-    // Insert into bookings table
-    $stmt = $conn->prepare("INSERT INTO bookings (name, phone, email, complete_address, street, house_no, apartment_no, services, ac_types)
-                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+    // Insert into bookings table (without JSON columns)
+    $stmt = $conn->prepare("INSERT INTO bookings (name, phone, email, complete_address, street, house_no, apartment_no) VALUES (?, ?, ?, ?, ?, ?, ?)");
     if (!$stmt) {
         throw new Exception("Prepare failed: " . $conn->error);
     }
-    $stmt->bind_param("sssssssss", $name, $phone, $email, $completeAddress, $street, $houseNo, $apartmentNo, $servicesJson, $acTypesJson);
+    $stmt->bind_param("sssssss", $name, $phone, $email, $completeAddress, $street, $houseNo, $apartmentNo);
     if (!$stmt->execute()) {
         throw new Exception("Booking insertion failed: " . $stmt->error);
     }
@@ -86,6 +82,20 @@ try {
             throw new Exception("Service appointment insertion failed: " . $stmtService->error);
         }
         $stmtService->close();
+    }
+
+    // For each AC type, insert into booking_actypes
+    foreach ($acTypes as $acType) {
+        $acType = $conn->real_escape_string($acType);
+        $stmtAcType = $conn->prepare("INSERT INTO booking_actypes (booking_id, ac_type) VALUES (?, ?)");
+        if (!$stmtAcType) {
+            throw new Exception("Prepare for AC type insertion failed: " . $conn->error);
+        }
+        $stmtAcType->bind_param("is", $bookingId, $acType);
+        if (!$stmtAcType->execute()) {
+            throw new Exception("AC type insertion failed: " . $stmtAcType->error);
+        }
+        $stmtAcType->close();
     }
 
     $conn->commit();
