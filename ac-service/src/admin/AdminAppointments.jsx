@@ -145,12 +145,6 @@ const AdminAppointments = () => {
     }
   };
 
-  // Function to display AC types with numbering
-  const renderAcTypes = (acTypes) => {
-    if (!acTypes || acTypes.length === 0) return 'N/A';
-    return acTypes.map((ac, index) => `${index + 1}. ${ac}`).join(', ');
-  };
-
   return (
     <div className="admin-appointments-container">
       <h2>Admin Appointments</h2>
@@ -186,7 +180,9 @@ const AdminAppointments = () => {
                         const key = `${appt.id}-${s.type}-${index}`;
                         return (
                           <div key={key}>
-                            <span>{index + 1}. {s.type} on {s.date}</span>
+                            <span>
+                              {index + 1}. {s.type} on {s.date}
+                            </span>
                             {rescheduleInputs[key] !== undefined ? (
                               <div className="reschedule-input-container">
                                 <input
@@ -226,7 +222,19 @@ const AdminAppointments = () => {
                       'N/A'
                     )}
                   </td>
-                  <td>{renderAcTypes(appt.ac_types)}</td>
+                  <td>
+                    {services.length > 0 ? (
+                      services.map((s, sIndex) => (
+                        <div key={`ac-${appt.id}-${sIndex}`}>
+                          {s.ac_types && s.ac_types.length > 0
+                            ? s.ac_types.map((ac, acIndex) => `${sIndex + 1}. ${ac}`).join(', ')
+                            : 'N/A'}
+                        </div>
+                      ))
+                    ) : (
+                      'N/A'
+                    )}
+                  </td>
                   <td>{appt.complete_address}</td>
                   <td>{appt.status || 'Pending'}</td>
                   <td>

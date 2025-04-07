@@ -42,17 +42,29 @@ const Dashboard = () => {
   const parseServices = (servicesStr) => {
     try {
       const services = JSON.parse(servicesStr);
-      return services.map((s, index) => `${index + 1}. ${s.type} on ${s.date}`).join(', ');
+      return services.map((s, index) => `${index + 1}. ${s.type} on ${s.date}`).join(' | ');
     } catch (error) {
       console.error("Error parsing services:", error);
       return 'N/A';
     }
   };
 
-  // Function to display AC types with numbering
-  const renderAcTypes = (acTypes) => {
-    if (!acTypes || acTypes.length === 0) return 'N/A';
-    return acTypes.map((ac, index) => `${index + 1}. ${ac}`).join(', ');
+  // Utility function to parse AC types from the services JSON string with proper numbering per service
+  const parseAcTypes = (servicesStr) => {
+    try {
+      const services = JSON.parse(servicesStr);
+      return services.map((s, index) => {
+        if (s.ac_types && s.ac_types.length > 0) {
+          // Prefix each AC type with the service number
+          return s.ac_types.map(ac => `${index + 1}. ${ac}`).join(', ');
+        } else {
+          return 'N/A';
+        }
+      }).join(' | ');
+    } catch (error) {
+      console.error("Error parsing AC types:", error);
+      return 'N/A';
+    }
   };
 
   return (
@@ -88,7 +100,11 @@ const Dashboard = () => {
                           ? parseServices(appointment.services)
                           : 'N/A'}
                       </td>
-                      <td>{renderAcTypes(appointment.ac_types)}</td>
+                      <td>
+                        {appointment.services 
+                          ? parseAcTypes(appointment.services)
+                          : 'N/A'}
+                      </td>
                       <td>{appointment.complete_address}</td>
                       <td>{appointment.status || 'Pending'}</td>
                       <td>
