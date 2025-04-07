@@ -95,9 +95,6 @@ const AdminBooking = () => {
       phone: formData.get('phone'),
       email: formData.get('email'),
       completeAddress: formData.get('completeAddress'),
-      street: formData.get('street'),
-      houseNo: formData.get('houseNo'),
-      apartmentNo: formData.get('apartmentNo'),
       // Construct the services array with their type and selected date formatted as YYYY-MM-DD using format()
       services: selectedServices.map(service => ({
         type: serviceOptions[service],
@@ -174,7 +171,7 @@ const AdminBooking = () => {
             />
           </div>
 
-          {/* Address Section */}
+          {/* Address Section - updated to remove street, house_no, apartment_no fields */}
           <div className="address-section">
             <h3>Address (required)</h3>
             <div className="complete-address">
@@ -185,11 +182,6 @@ const AdminBooking = () => {
                 placeholder="Enter complete address"
                 required
               />
-            </div>
-            <div className="address-inputs">
-              <input type="text" name="street" placeholder="Street" required />
-              <input type="text" name="houseNo" placeholder="House No" />
-              <input type="text" name="apartmentNo" placeholder="Apartment No" />
             </div>
           </div>
 

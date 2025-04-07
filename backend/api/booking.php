@@ -29,9 +29,6 @@ $name            = $conn->real_escape_string($data['name']);
 $phone           = $conn->real_escape_string($data['phone']);
 $email           = isset($data['email']) ? $conn->real_escape_string($data['email']) : "";
 $completeAddress = $conn->real_escape_string($data['completeAddress']);
-$street          = isset($data['street']) ? $conn->real_escape_string($data['street']) : "";
-$houseNo         = isset($data['houseNo']) ? $conn->real_escape_string($data['houseNo']) : "";
-$apartmentNo     = isset($data['apartmentNo']) ? $conn->real_escape_string($data['apartmentNo']) : "";
 $servicesArray   = $data['services'];
 $acTypes         = isset($data['acTypes']) ? $data['acTypes'] : [];
 
@@ -39,12 +36,12 @@ $acTypes         = isset($data['acTypes']) ? $data['acTypes'] : [];
 $conn->begin_transaction();
 
 try {
-    // Insert into bookings table (without JSON columns)
-    $stmt = $conn->prepare("INSERT INTO bookings (name, phone, email, complete_address, street, house_no, apartment_no) VALUES (?, ?, ?, ?, ?, ?, ?)");
+    // Insert into bookings table (without street, house_no, apartment_no)
+    $stmt = $conn->prepare("INSERT INTO bookings (name, phone, email, complete_address) VALUES (?, ?, ?, ?)");
     if (!$stmt) {
         throw new Exception("Prepare failed: " . $conn->error);
     }
-    $stmt->bind_param("sssssss", $name, $phone, $email, $completeAddress, $street, $houseNo, $apartmentNo);
+    $stmt->bind_param("ssss", $name, $phone, $email, $completeAddress);
     if (!$stmt->execute()) {
         throw new Exception("Booking insertion failed: " . $stmt->error);
     }
