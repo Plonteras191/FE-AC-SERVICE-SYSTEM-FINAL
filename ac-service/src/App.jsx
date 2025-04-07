@@ -3,12 +3,12 @@ import { Routes, Route, useLocation } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 
 import Header from './components/Header';
-import Home from './components/Home';
-import About from './components/About';
-import Services from './components/Services';
-import CallUs from './components/CallUs';
-import Booking from './components/Booking';
-import Confirmation from './components/Confirmation';
+import Home from './pages/Home';
+import About from './pages/About';
+import Services from './pages/Services';
+import CallUs from './pages/CallUs';
+import Booking from './pages/Booking';
+import Confirmation from './pages/Confirmation';
 
 // Admin Pages
 import AdminLogin from './admin/AdminLogin';

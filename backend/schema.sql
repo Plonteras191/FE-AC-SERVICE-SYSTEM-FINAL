@@ -1,3 +1,5 @@
+--DATABASE NAME : service_ac_db
+
 -- Main Bookings Table
 CREATE TABLE bookings (
   id INT AUTO_INCREMENT PRIMARY KEY,
@@ -33,3 +35,18 @@ CREATE TABLE revenue_history (
   total_revenue DECIMAL(10,2) NOT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE IF NOT EXISTS admin_users (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  email VARCHAR(100) NOT NULL UNIQUE,
+  password VARCHAR(255) NOT NULL,
+  name VARCHAR(100) NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+--eeradmin@gmail.com/admineer2025 or eeradmin2@gmail.com/admineer2025
+
+-- These are the hashed versions of 'admineer2025' using PASSWORD_DEFAULT
+-- INSERT INTO admin_users (email, password, name) VALUES 
+-- ('eeradmin@gmail.com', '$2y$10$Jk8f9XtLIf.7TfVux9Xxk.jh3KZDlLon.aZ9xNh5wq5cGMF.hEUru', 'Admin EER'),
+-- ('eeradmin2@gmail.com', '$2y$10$Jk8f9XtLIf.7TfVux9Xxk.jh3KZDlLon.aZ9xNh5wq5cGMF.hEUru', 'Admin EER 2');
