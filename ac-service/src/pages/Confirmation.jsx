@@ -28,9 +28,6 @@ const Confirmation = () => {
             <li><strong>Complete Address:</strong> {bookingData.completeAddress}</li>
           )}
           <li>
-            <strong>Street:</strong> {bookingData.street}, <strong>House No:</strong> {bookingData.houseNo}, <strong>Apartment No:</strong> {bookingData.apartmentNo}
-          </li>
-          <li>
             <strong>Service(s):</strong> {servicesDisplay}
           </li>
           {bookingData.acTypes && bookingData.acTypes.length > 0 && (

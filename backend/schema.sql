@@ -47,6 +47,6 @@ CREATE TABLE IF NOT EXISTS admin_users (
 --eeradmin@gmail.com/admineer2025 or eeradmin2@gmail.com/admineer2025
 
 -- These are the hashed versions of 'admineer2025' using PASSWORD_DEFAULT
--- INSERT INTO admin_users (email, password, name) VALUES 
--- ('eeradmin@gmail.com', '$2y$10$Jk8f9XtLIf.7TfVux9Xxk.jh3KZDlLon.aZ9xNh5wq5cGMF.hEUru', 'Admin EER'),
--- ('eeradmin2@gmail.com', '$2y$10$Jk8f9XtLIf.7TfVux9Xxk.jh3KZDlLon.aZ9xNh5wq5cGMF.hEUru', 'Admin EER 2');
+INSERT INTO admin_users (email, password, name) VALUES 
+('eeradmin@gmail.com', '$2y$10$Jk8f9XtLIf.7TfVux9Xxk.jh3KZDlLon.aZ9xNh5wq5cGMF.hEUru', 'Admin EER'),
+('eeradmin2@gmail.com', '$2y$10$Jk8f9XtLIf.7TfVux9Xxk.jh3KZDlLon.aZ9xNh5wq5cGMF.hEUru', 'Admin EER 2');

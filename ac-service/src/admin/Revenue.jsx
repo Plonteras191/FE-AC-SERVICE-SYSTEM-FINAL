@@ -1,4 +1,3 @@
-// src/components/Revenue.jsx
 import React, { useState, useEffect } from 'react';
 import '../styles/Revenue.css';
 
@@ -99,55 +98,76 @@ const Revenue = () => {
 
   return (
     <div className="revenue-container">
-      <h2>Revenue</h2>
+      <div className="revenue-header">
+        <h2>Revenue Management</h2>
+        <p className="revenue-subtitle">Track and manage completed service appointments</p>
+      </div>
+      
       <div className="revenue-box">
         {appointments.length === 0 ? (
-          <p>No completed appointments available.</p>
-        ) : (
-          <table className="revenue-table">
-            <thead>
-              <tr>
-                <th>Appointment ID</th>
-                <th>Customer</th>
-                <th>Service</th>
-                <th>Date</th>
-                <th>Revenue (Php)</th>
-              </tr>
-            </thead>
-            <tbody>
-              {appointments.map(appt => {
-                const { service, date } = getServiceInfo(appt.services);
-                return (
-                  <tr key={appt.id}>
-                    <td>{appt.id}</td>
-                    <td>{appt.customer || appt.name}</td>
-                    <td>{service}</td>
-                    <td>{date}</td>
-                    <td>
-                      <input
-                        type="number"
-                        placeholder="0.00"
-                        value={revenueData[appt.id] || ''}
-                        onChange={(e) => handleInputChange(appt.id, e.target.value)}
-                      />
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        )}
-        <div className="revenue-actions">
-          <button className="compute-button" onClick={computeTotalRevenue}>
-            Compute
-          </button>
-          <button className="save-button" onClick={saveRevenue}>
-            Save
-          </button>
-          <div className="total-display">
-            <h3>Total Revenue: Php {totalRevenue.toFixed(2)}</h3>
+          <div className="no-data-message">
+            <div className="empty-state-icon">💼</div>
+            <p>No completed appointments available for revenue calculation.</p>
+            <p className="empty-state-hint">Completed appointments will appear here for revenue tracking.</p>
           </div>
-        </div>
+        ) : (
+          <>
+            <div className="table-container">
+              <table className="revenue-table">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Customer</th>
+                    <th>Service</th>
+                    <th>Date</th>
+                    <th>Revenue (Php)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {appointments.map(appt => {
+                    const { service, date } = getServiceInfo(appt.services);
+                    return (
+                      <tr key={appt.id}>
+                        <td className="id-column">{appt.id}</td>
+                        <td>{appt.customer || appt.name}</td>
+                        <td className="service-column">{service}</td>
+                        <td>{date}</td>
+                        <td className="revenue-input-column">
+                          <div className="revenue-input-wrapper">
+                            <span className="currency-symbol">₱</span>
+                            <input
+                              type="number"
+                              placeholder="0.00"
+                              value={revenueData[appt.id] || ''}
+                              onChange={(e) => handleInputChange(appt.id, e.target.value)}
+                            />
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+            
+            <div className="revenue-summary">
+              <div className="actions-group">
+                <button className="compute-button" onClick={computeTotalRevenue}>
+                  <span className="button-icon">📊</span>
+                  Compute
+                </button>
+                <button className="save-button" onClick={saveRevenue}>
+                  <span className="button-icon">💾</span>
+                  Save Record
+                </button>
+              </div>
+              <div className="total-display">
+                <h3>Total Revenue:</h3>
+                <div className="total-amount">₱ {totalRevenue.toFixed(2)}</div>
+              </div>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

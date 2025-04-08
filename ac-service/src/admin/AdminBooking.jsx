@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import DatePicker from 'react-datepicker';
 import { parseISO, format } from 'date-fns';
 import "react-datepicker/dist/react-datepicker.css";
@@ -14,30 +13,27 @@ const serviceOptions = {
 
 const AdminBooking = () => {
   const [selectedServices, setSelectedServices] = useState([]);
-  const [serviceDates, setServiceDates] = useState({}); // Stores a date for each service
-  const [globalAvailableDates, setGlobalAvailableDates] = useState([]); // Global available dates as Date objects
+  const [serviceDates, setServiceDates] = useState({});
+  const [globalAvailableDates, setGlobalAvailableDates] = useState([]);
   const [acTypes, setAcTypes] = useState([]);
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
-  const navigate = useNavigate();
+  const [bookingRef, setBookingRef] = useState("");
 
-  // Fetch global available dates from backend when component mounts
   useEffect(() => {
     fetch("http://localhost/AC-SERVICE-FINAL/backend/api/getAvailableDates.php?global=1&start=2025-01-01&end=2025-12-31")
       .then(response => response.json())
       .then(data => {
-        // Convert each date string into a Date object using parseISO to interpret as local time
         const dates = data.map(dateStr => parseISO(dateStr));
         setGlobalAvailableDates(dates);
       })
       .catch(err => console.error("Error fetching available dates:", err));
   }, []);
 
-  // Handle selection/deselection of services
   const handleServiceChange = (e) => {
     const { value, checked } = e.target;
     if (checked) {
       setSelectedServices(prev => [...prev, value]);
-      setServiceDates(prev => ({ ...prev, [value]: null })); // Initialize date as null for new service
+      setServiceDates(prev => ({ ...prev, [value]: null }));
     } else {
       setSelectedServices(prev => prev.filter(service => service !== value));
       setServiceDates(prev => {
@@ -48,7 +44,6 @@ const AdminBooking = () => {
     }
   };
 
-  // Handle AC Type checkbox changes
   const handleACTypeChange = (e) => {
     const { value, checked } = e.target;
     if (checked) {
@@ -58,24 +53,20 @@ const AdminBooking = () => {
     }
   };
 
-  // Handle date change for a specific service type
   const handleServiceDateChange = (service, date) => {
     setServiceDates(prev => ({ ...prev, [service]: date }));
   };
 
-  // Global filter: allow only dates that are in the globalAvailableDates list
   const isDateGloballyAvailable = (date) => {
-    if (globalAvailableDates.length === 0) return true; // if not loaded, allow selection
+    if (globalAvailableDates.length === 0) return true;
     return globalAvailableDates.some(avDate =>
       avDate.toDateString() === date.toDateString()
     );
   };
 
-  // Form submission: validate and send booking data to backend
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    // Validate that a date is selected and still available for each chosen service
     for (const service of selectedServices) {
       const selectedDate = serviceDates[service];
       if (!selectedDate) {
@@ -88,14 +79,12 @@ const AdminBooking = () => {
       }
     }
 
-    // Prepare booking data for submission
     const formData = new FormData(e.target);
     const bookingData = {
       name: formData.get('name'),
       phone: formData.get('phone'),
       email: formData.get('email'),
       completeAddress: formData.get('completeAddress'),
-      // Construct the services array with their type and selected date formatted as YYYY-MM-DD using format()
       services: selectedServices.map(service => ({
         type: serviceOptions[service],
         date: serviceDates[service] ? format(serviceDates[service], 'yyyy-MM-dd') : null,
@@ -103,7 +92,6 @@ const AdminBooking = () => {
       acTypes,
     };
 
-    // POST booking data to the backend API endpoint
     fetch("http://localhost/AC-SERVICE-FINAL/backend/api/booking.php", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -113,8 +101,12 @@ const AdminBooking = () => {
       .then(responseData => {
         console.log("Response from backend:", responseData);
         if (responseData.bookingId) {
-          // Open confirmation modal on success
+          // Set the booking reference ID and open the confirmation modal
+          setBookingRef(responseData.bookingId);
           setIsConfirmModalOpen(true);
+          
+          // Reset form after successful submission
+          resetForm();
         } else {
           alert("Error saving booking: " + responseData.message);
         }
@@ -124,97 +116,110 @@ const AdminBooking = () => {
       });
   };
 
-  // Modal confirmation: when admin confirms, navigate to admin dashboard
-  const handleModalConfirm = () => {
-    setIsConfirmModalOpen(false);
-    navigate('/admin/dashboard');
+  // Reset form to initial state
+  const resetForm = () => {
+    setSelectedServices([]);
+    setServiceDates({});
+    setAcTypes([]);
+    // Reset the form element
+    document.getElementById("adminBookingForm").reset();
   };
 
-  // If admin cancels the modal, just close it
-  const handleModalCancel = () => {
+  // Close the modal without navigation
+  const handleModalClose = () => {
     setIsConfirmModalOpen(false);
   };
 
   return (
-    <div className="booking-container">
+    <div className="booking-container admin-booking">
       <h2>Admin Booking</h2>
       <div className="booking-box">
-        <form onSubmit={handleSubmit}>
-          {/* Customer Details Section */}
-          <div className="customer-details">
-            <label htmlFor="name">Name (required):</label>
-            <input
-              type="text"
-              id="name"
-              name="name"
-              placeholder="Customer Name"
-              required
-              pattern="[A-Za-z ]+"
-              title="Name should contain only letters and spaces."
-            />
-            <label htmlFor="phone">Phone Number (required):</label>
-            <input
-              type="tel"
-              id="phone"
-              name="phone"
-              placeholder="Customer Phone"
-              required
-              pattern="^[0-9]{11}$"
-              title="Phone number must be exactly 11 digits."
-            />
-            <label htmlFor="email">Email (optional):</label>
-            <input
-              type="email"
-              id="email"
-              name="email"
-              placeholder="Customer Email"
-            />
-          </div>
-
-          {/* Address Section - updated to remove street, house_no, apartment_no fields */}
-          <div className="address-section">
-            <h3>Address (required)</h3>
-            <div className="complete-address">
-              <input
-                type="text"
-                id="completeAddress"
-                name="completeAddress"
-                placeholder="Enter complete address"
-                required
+        <form id="adminBookingForm" onSubmit={handleSubmit}>
+          <div className="form-section customer-details">
+            <h3>Customer Information</h3>
+            <div className="input-group">
+              <label htmlFor="name">Customer Name<span className="required">*</span></label>
+              <input 
+                type="text" 
+                id="name" 
+                name="name" 
+                placeholder="Enter customer name" 
+                required 
+                pattern="[A-Za-z ]+" 
+                title="Name should contain only letters and spaces." 
+              />
+            </div>
+            
+            <div className="input-group">
+              <label htmlFor="phone">Phone Number<span className="required">*</span></label>
+              <input 
+                type="tel" 
+                id="phone" 
+                name="phone" 
+                placeholder="Enter 11-digit phone number" 
+                required 
+                pattern="^[0-9]{11}$" 
+                title="Phone number must be exactly 11 digits." 
+              />
+            </div>
+            
+            <div className="input-group">
+              <label htmlFor="email">Email Address</label>
+              <input 
+                type="email" 
+                id="email" 
+                name="email" 
+                placeholder="Enter customer email (optional)" 
               />
             </div>
           </div>
 
-          {/* Service Section */}
-          <div className="service-section">
-            <h3>Service (Select one or more)</h3>
+          <div className="form-section address-section">
+            <h3>Service Location</h3>
+            <div className="input-group">
+              <label htmlFor="completeAddress">Complete Address<span className="required">*</span></label>
+              <input 
+                type="text" 
+                id="completeAddress" 
+                name="completeAddress" 
+                placeholder="Enter customer's complete address" 
+                required 
+              />
+            </div>
+          </div>
+
+          <div className="form-section service-section">
+            <h3>Service Selection</h3>
+            <p className="section-hint">Select one or more services to book</p>
             <div className="service-options">
               {Object.entries(serviceOptions).map(([key, label]) => (
-                <label key={key}>
-                  <input
-                    type="checkbox"
-                    value={key}
-                    checked={selectedServices.includes(key)}
-                    onChange={handleServiceChange}
+                <label key={key} className="checkbox-container">
+                  <input 
+                    type="checkbox" 
+                    value={key} 
+                    checked={selectedServices.includes(key)} 
+                    onChange={handleServiceChange} 
                   />
-                  {label}
+                  <span className="checkbox-label">{label}</span>
                 </label>
               ))}
             </div>
+            
             {selectedServices.length > 0 && (
               <div className="service-dates">
                 {selectedServices.map(service => (
-                  <div key={service} className="service-date-picker">
-                    <label>Select date for {serviceOptions[service]}:</label>
+                  <div key={service} className="date-picker-group">
+                    <label>Date for {serviceOptions[service]}<span className="required">*</span></label>
                     <DatePicker
                       selected={serviceDates[service]}
                       onChange={(date) => handleServiceDateChange(service, date)}
                       minDate={new Date()}
                       filterDate={isDateGloballyAvailable}
-                      placeholderText="Select a date"
+                      placeholderText="Select available date"
                       required
                       dateFormat="yyyy-MM-dd"
                       calendarClassName="custom-calendar"
+                      className="date-input"
                     />
                   </div>
                 ))}
@@ -222,49 +227,53 @@ const AdminBooking = () => {
             )}
           </div>
 
-          {/* AC Type Section */}
-          <div className="ac-type-section">
-            <h3>AC Type (Select all that apply)</h3>
+          <div className="form-section ac-type-section">
+            <h3>AC Type Information</h3>
+            <p className="section-hint">Select all AC types that apply to this service</p>
             <div className="ac-type-options">
-              <label>
-                <input
-                  type="checkbox"
-                  value="Central"
-                  checked={acTypes.includes("Central")}
-                  onChange={handleACTypeChange}
+              <label className="checkbox-container">
+                <input 
+                  type="checkbox" 
+                  value="Central" 
+                  checked={acTypes.includes("Central")} 
+                  onChange={handleACTypeChange} 
                 />
-                Central
+                <span className="checkbox-label">Central</span>
               </label>
-              <label>
-                <input
-                  type="checkbox"
-                  value="Windows"
-                  checked={acTypes.includes("Windows")}
-                  onChange={handleACTypeChange}
+              <label className="checkbox-container">
+                <input 
+                  type="checkbox" 
+                  value="Windows" 
+                  checked={acTypes.includes("Windows")} 
+                  onChange={handleACTypeChange} 
                 />
-                Windows
+                <span className="checkbox-label">Windows</span>
               </label>
-              <label>
-                <input
-                  type="checkbox"
-                  value="Split"
-                  checked={acTypes.includes("Split")}
-                  onChange={handleACTypeChange}
+              <label className="checkbox-container">
+                <input 
+                  type="checkbox" 
+                  value="Split" 
+                  checked={acTypes.includes("Split")} 
+                  onChange={handleACTypeChange} 
                 />
-                Split
+                <span className="checkbox-label">Split</span>
               </label>
             </div>
           </div>
 
-          <button type="submit">Book Appointment</button>
+          <div className="form-submit">
+            <button type="submit">Create Booking</button>
+          </div>
         </form>
       </div>
+      
       <Modal
         isOpen={isConfirmModalOpen}
-        title="Booking Confirmed"
-        message="The booking has been successfully saved."
-        onConfirm={handleModalConfirm}
-        onCancel={handleModalCancel}
+        title="Confirm Booking"
+        message={`The booking will be successfully saved with reference ID: ${bookingRef}`}
+        onConfirm={handleModalClose}
+        confirmButtonText="Close"
+        // Removed the cancel button by not passing onCancel
       />
     </div>
   );
