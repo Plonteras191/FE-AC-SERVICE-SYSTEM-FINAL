@@ -155,6 +155,10 @@ const AdminCalendar = () => {
               <span className="color-box" style={{backgroundColor: '#1cc88a'}}></span>
               <span>Installation</span>
             </div>
+            <div className="legend-item">
+              <span className="color-box" style={{backgroundColor: '#808080'}}></span>
+              <span>Checkup and Maintenance  </span>
+            </div>
           </div>
         </div>
       </div>

@@ -30,13 +30,12 @@ $phone           = $conn->real_escape_string($data['phone']);
 $email           = isset($data['email']) ? $conn->real_escape_string($data['email']) : "";
 $completeAddress = $conn->real_escape_string($data['completeAddress']);
 $servicesArray   = $data['services'];
-$acTypes         = isset($data['acTypes']) ? $data['acTypes'] : [];
 
 // Begin transaction
 $conn->begin_transaction();
 
 try {
-    // Insert into bookings table (without street, house_no, apartment_no)
+    // Insert into bookings table
     $stmt = $conn->prepare("INSERT INTO bookings (name, phone, email, complete_address) VALUES (?, ?, ?, ?)");
     if (!$stmt) {
         throw new Exception("Prepare failed: " . $conn->error);
@@ -50,8 +49,8 @@ try {
 
     // For each service, verify availability and insert into booking_services
     foreach ($servicesArray as $service) {
-        if (!isset($service['type'], $service['date'])) {
-            throw new Exception("Each service must include a type and a date.");
+        if (!isset($service['type'], $service['date'], $service['acTypes']) || empty($service['acTypes'])) {
+            throw new Exception("Each service must include a type, date, and at least one AC type.");
         }
         $serviceType = $conn->real_escape_string($service['type']);
         $appointmentDate = $conn->real_escape_string($service['date']);
@@ -78,21 +77,22 @@ try {
         if (!$stmtService->execute()) {
             throw new Exception("Service appointment insertion failed: " . $stmtService->error);
         }
+        $serviceId = $conn->insert_id;
         $stmtService->close();
-    }
 
-    // For each AC type, insert into booking_actypes
-    foreach ($acTypes as $acType) {
-        $acType = $conn->real_escape_string($acType);
-        $stmtAcType = $conn->prepare("INSERT INTO booking_actypes (booking_id, ac_type) VALUES (?, ?)");
-        if (!$stmtAcType) {
-            throw new Exception("Prepare for AC type insertion failed: " . $conn->error);
+        // For each AC type in this service, insert into booking_actypes
+        foreach ($service['acTypes'] as $acType) {
+            $acType = $conn->real_escape_string($acType);
+            $stmtAcType = $conn->prepare("INSERT INTO booking_actypes (booking_id, ac_type) VALUES (?, ?)");
+            if (!$stmtAcType) {
+                throw new Exception("Prepare for AC type insertion failed: " . $conn->error);
+            }
+            $stmtAcType->bind_param("is", $bookingId, $acType);
+            if (!$stmtAcType->execute()) {
+                throw new Exception("AC type insertion failed: " . $stmtAcType->error);
+            }
+            $stmtAcType->close();
         }
-        $stmtAcType->bind_param("is", $bookingId, $acType);
-        if (!$stmtAcType->execute()) {
-            throw new Exception("AC type insertion failed: " . $stmtAcType->error);
-        }
-        $stmtAcType->close();
     }
 
     $conn->commit();

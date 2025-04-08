@@ -7,39 +7,61 @@ const Confirmation = () => {
   const navigate = useNavigate();
   const bookingData = location.state || {};
 
-  // Convert the services array of objects into a string representation
-  const servicesDisplay = bookingData.services && bookingData.services.length > 0
-    ? bookingData.services
-        .map(service => `${service.type} on ${service.date}`)
-        .join(', ')
-    : "None selected";
-
   return (
     <div className="confirmation-container">
-      <h2>Appointment Pending</h2>
-      <p>Thank you for booking your appointment!</p>
-      <p>Your appointment is currently pending. We will contact you shortly to confirm your details.</p>
-      <div className="booking-details">
-        <ul>
-          <li><strong>Name:</strong> {bookingData.name}</li>
-          <li><strong>Phone:</strong> {bookingData.phone}</li>
-          <li><strong>Email:</strong> {bookingData.email}</li>
-          {bookingData.completeAddress && (
-            <li><strong>Complete Address:</strong> {bookingData.completeAddress}</li>
-          )}
-          <li>
-            <strong>Service(s):</strong> {servicesDisplay}
-          </li>
-          {bookingData.acTypes && bookingData.acTypes.length > 0 && (
-            <li>
-              <strong>AC Type(s):</strong> {bookingData.acTypes.join(', ')}
-            </li>
-          )}
-        </ul>
+      <div className="confirmation-box">
+        <h2>Appointment Confirmed!</h2>
+        <div className="confirmation-message">
+          <p>Thank you for booking your appointment with our AC service!</p>
+          <p>Your appointment details have been received and are being processed.</p>
+          <p>We will contact you shortly at <strong>{bookingData.phone}</strong> to confirm your booking.</p>
+        </div>
+
+        <div className="booking-summary">
+          <h3>Booking Summary</h3>
+          
+          <div className="summary-section personal-info">
+            <h4>Personal Information</h4>
+            <ul>
+              <li><span>Name:</span> {bookingData.name}</li>
+              <li><span>Phone:</span> {bookingData.phone}</li>
+              {bookingData.email && <li><span>Email:</span> {bookingData.email}</li>}
+            </ul>
+          </div>
+
+          <div className="summary-section location-info">
+            <h4>Service Location</h4>
+            <p>{bookingData.completeAddress}</p>
+          </div>
+
+          <div className="summary-section services-info">
+            <h4>Requested Services</h4>
+            {bookingData.services && bookingData.services.length > 0 ? (
+              <div className="service-list">
+                {bookingData.services.map((service, index) => (
+                  <div key={index} className="service-item">
+                    <div className="service-header">
+                      <span className="service-type">{service.type}</span>
+                      <span className="service-date">{service.date}</span>
+                    </div>
+                    <div className="service-ac-types">
+                      <span>AC Types:</span> {service.acTypes.join(', ')}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p>No services selected</p>
+            )}
+          </div>
+        </div>
+
+        <div className="actions">
+          <button className="primary-button" onClick={() => navigate('/')}>
+            Return to Home
+          </button>
+        </div>
       </div>
-      <button className="home-button" onClick={() => navigate('/')}>
-        Go to Home
-      </button>
     </div>
   );
 };

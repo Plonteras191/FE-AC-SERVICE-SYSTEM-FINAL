@@ -38,32 +38,13 @@ const Dashboard = () => {
       .catch(error => console.error("Error completing appointment:", error));
   };
 
-  // Utility function to parse services JSON string with numbering
+  // Utility function to parse services JSON string
   const parseServices = (servicesStr) => {
     try {
-      const services = JSON.parse(servicesStr);
-      return services.map((s, index) => `${index + 1}. ${s.type} on ${s.date}`).join(' | ');
+      return JSON.parse(servicesStr);
     } catch (error) {
       console.error("Error parsing services:", error);
-      return 'N/A';
-    }
-  };
-
-  // Utility function to parse AC types from the services JSON string with proper numbering per service
-  const parseAcTypes = (servicesStr) => {
-    try {
-      const services = JSON.parse(servicesStr);
-      return services.map((s, index) => {
-        if (s.ac_types && s.ac_types.length > 0) {
-          // Prefix each AC type with the service number
-          return s.ac_types.map(ac => `${index + 1}. ${ac}`).join(', ');
-        } else {
-          return 'N/A';
-        }
-      }).join(' | ');
-    } catch (error) {
-      console.error("Error parsing AC types:", error);
-      return 'N/A';
+      return [];
     }
   };
 
@@ -81,42 +62,54 @@ const Dashboard = () => {
                     <th>Customer</th>
                     <th>Phone</th>
                     <th>Email</th>
-                    <th>Service(s)</th>
-                    <th>AC Type(s)</th>
+                    <th>Service Details</th>
                     <th>Address</th>
                     <th>Status</th>
                     <th>Action</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {acceptedAppointments.map((appointment) => (
-                    <tr key={appointment.id}>
-                      <td>{appointment.id}</td>
-                      <td>{appointment.name}</td>
-                      <td>{appointment.phone}</td>
-                      <td>{appointment.email || 'N/A'}</td>
-                      <td>
-                        {appointment.services 
-                          ? parseServices(appointment.services)
-                          : 'N/A'}
-                      </td>
-                      <td>
-                        {appointment.services 
-                          ? parseAcTypes(appointment.services)
-                          : 'N/A'}
-                      </td>
-                      <td>{appointment.complete_address}</td>
-                      <td>{appointment.status || 'Pending'}</td>
-                      <td>
-                        <button
-                          className="complete-button"
-                          onClick={() => completeAppointment(appointment.id)}
-                        >
-                          Complete
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
+                  {acceptedAppointments.map((appointment) => {
+                    const services = parseServices(appointment.services);
+                    return (
+                      <tr key={appointment.id}>
+                        <td>{appointment.id}</td>
+                        <td>{appointment.name}</td>
+                        <td>{appointment.phone}</td>
+                        <td>{appointment.email || 'N/A'}</td>
+                        <td>
+                          {services.length > 0 ? (
+                            <div className="service-details">
+                              {services.map((s, index) => (
+                                <div key={`${appointment.id}-${index}`} className="service-item">
+                                  <div className="service-info">
+                                    <strong>{index + 1}. {s.type}</strong> on {s.date}
+                                    {s.acTypes && s.acTypes.length > 0 && (
+                                      <div className="ac-types">
+                                        <em>AC Types:</em> {s.acTypes.join(', ')}
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            'N/A'
+                          )}
+                        </td>
+                        <td>{appointment.complete_address}</td>
+                        <td>{appointment.status || 'Pending'}</td>
+                        <td>
+                          <button
+                            className="complete-button"
+                            onClick={() => completeAppointment(appointment.id)}
+                          >
+                            Complete
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             ) : (

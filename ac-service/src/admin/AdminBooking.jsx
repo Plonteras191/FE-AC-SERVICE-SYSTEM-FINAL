@@ -9,13 +9,20 @@ const serviceOptions = {
   cleaning: "Cleaning",
   repair: "Repair",
   installation: "Installation",
+  maintenance: "Checkup and Maintenance",
 };
+
+const acTypeOptions = [
+  "Central",
+  "Windows",
+  "Split"
+];
 
 const AdminBooking = () => {
   const [selectedServices, setSelectedServices] = useState([]);
   const [serviceDates, setServiceDates] = useState({});
+  const [serviceAcTypes, setServiceAcTypes] = useState({});
   const [globalAvailableDates, setGlobalAvailableDates] = useState([]);
-  const [acTypes, setAcTypes] = useState([]);
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const [bookingRef, setBookingRef] = useState("");
 
@@ -34,6 +41,7 @@ const AdminBooking = () => {
     if (checked) {
       setSelectedServices(prev => [...prev, value]);
       setServiceDates(prev => ({ ...prev, [value]: null }));
+      setServiceAcTypes(prev => ({ ...prev, [value]: [] }));
     } else {
       setSelectedServices(prev => prev.filter(service => service !== value));
       setServiceDates(prev => {
@@ -41,16 +49,31 @@ const AdminBooking = () => {
         delete newDates[value];
         return newDates;
       });
+      setServiceAcTypes(prev => {
+        const newAcTypes = { ...prev };
+        delete newAcTypes[value];
+        return newAcTypes;
+      });
     }
   };
 
-  const handleACTypeChange = (e) => {
-    const { value, checked } = e.target;
-    if (checked) {
-      setAcTypes(prev => [...prev, value]);
-    } else {
-      setAcTypes(prev => prev.filter(type => type !== value));
-    }
+  const handleACTypeChange = (service, acType) => {
+    setServiceAcTypes(prev => {
+      const currentTypes = prev[service] || [];
+      if (currentTypes.includes(acType)) {
+        // Remove the AC type if it's already selected
+        return {
+          ...prev,
+          [service]: currentTypes.filter(type => type !== acType)
+        };
+      } else {
+        // Add the AC type if it's not already selected
+        return {
+          ...prev,
+          [service]: [...currentTypes, acType]
+        };
+      }
+    });
   };
 
   const handleServiceDateChange = (service, date) => {
@@ -67,6 +90,7 @@ const AdminBooking = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
 
+    // Validation
     for (const service of selectedServices) {
       const selectedDate = serviceDates[service];
       if (!selectedDate) {
@@ -75,6 +99,10 @@ const AdminBooking = () => {
       }
       if (!isDateGloballyAvailable(selectedDate)) {
         alert(`The selected date for ${serviceOptions[service]} is no longer available. Please select another date.`);
+        return;
+      }
+      if (!serviceAcTypes[service] || serviceAcTypes[service].length === 0) {
+        alert(`Please select at least one AC type for ${serviceOptions[service]}.`);
         return;
       }
     }
@@ -88,8 +116,8 @@ const AdminBooking = () => {
       services: selectedServices.map(service => ({
         type: serviceOptions[service],
         date: serviceDates[service] ? format(serviceDates[service], 'yyyy-MM-dd') : null,
-      })),
-      acTypes,
+        acTypes: serviceAcTypes[service] || []
+      }))
     };
 
     fetch("http://localhost/AC-SERVICE-FINAL/backend/api/booking.php", {
@@ -120,7 +148,7 @@ const AdminBooking = () => {
   const resetForm = () => {
     setSelectedServices([]);
     setServiceDates({});
-    setAcTypes([]);
+    setServiceAcTypes({});
     // Reset the form element
     document.getElementById("adminBookingForm").reset();
   };
@@ -206,59 +234,45 @@ const AdminBooking = () => {
             </div>
             
             {selectedServices.length > 0 && (
-              <div className="service-dates">
+              <div className="service-configuration">
                 {selectedServices.map(service => (
-                  <div key={service} className="date-picker-group">
-                    <label>Date for {serviceOptions[service]}<span className="required">*</span></label>
-                    <DatePicker
-                      selected={serviceDates[service]}
-                      onChange={(date) => handleServiceDateChange(service, date)}
-                      minDate={new Date()}
-                      filterDate={isDateGloballyAvailable}
-                      placeholderText="Select available date"
-                      required
-                      dateFormat="yyyy-MM-dd"
-                      calendarClassName="custom-calendar"
-                      className="date-input"
-                    />
+                  <div key={service} className="service-config-box">
+                    <h4>{serviceOptions[service]} Service Details</h4>
+                    
+                    <div className="date-picker-group">
+                      <label>Date for {serviceOptions[service]}<span className="required">*</span></label>
+                      <DatePicker
+                        selected={serviceDates[service]}
+                        onChange={(date) => handleServiceDateChange(service, date)}
+                        minDate={new Date()}
+                        filterDate={isDateGloballyAvailable}
+                        placeholderText="Select available date"
+                        required
+                        dateFormat="yyyy-MM-dd"
+                        calendarClassName="custom-calendar"
+                        className="date-input"
+                      />
+                    </div>
+                    
+                    <div className="ac-type-group">
+                      <label>AC Types for {serviceOptions[service]}<span className="required">*</span></label>
+                      <div className="ac-type-options">
+                        {acTypeOptions.map(acType => (
+                          <label key={`${service}-${acType}`} className="checkbox-container">
+                            <input 
+                              type="checkbox" 
+                              checked={serviceAcTypes[service]?.includes(acType) || false}
+                              onChange={() => handleACTypeChange(service, acType)} 
+                            />
+                            <span className="checkbox-label">{acType}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
                   </div>
                 ))}
               </div>
             )}
-          </div>
-
-          <div className="form-section ac-type-section">
-            <h3>AC Type Information</h3>
-            <p className="section-hint">Select all AC types that apply to this service</p>
-            <div className="ac-type-options">
-              <label className="checkbox-container">
-                <input 
-                  type="checkbox" 
-                  value="Central" 
-                  checked={acTypes.includes("Central")} 
-                  onChange={handleACTypeChange} 
-                />
-                <span className="checkbox-label">Central</span>
-              </label>
-              <label className="checkbox-container">
-                <input 
-                  type="checkbox" 
-                  value="Windows" 
-                  checked={acTypes.includes("Windows")} 
-                  onChange={handleACTypeChange} 
-                />
-                <span className="checkbox-label">Windows</span>
-              </label>
-              <label className="checkbox-container">
-                <input 
-                  type="checkbox" 
-                  value="Split" 
-                  checked={acTypes.includes("Split")} 
-                  onChange={handleACTypeChange} 
-                />
-                <span className="checkbox-label">Split</span>
-              </label>
-            </div>
           </div>
 
           <div className="form-submit">
@@ -269,11 +283,10 @@ const AdminBooking = () => {
       
       <Modal
         isOpen={isConfirmModalOpen}
-        title="Confirm Booking"
-        message={`The booking will be successfully saved with reference ID: ${bookingRef}`}
+        title="Booking Confirmation"
+        message={`The booking has been successfully saved with reference ID: ${bookingRef}`}
         onConfirm={handleModalClose}
         confirmButtonText="Close"
-        // Removed the cancel button by not passing onCancel
       />
     </div>
   );
