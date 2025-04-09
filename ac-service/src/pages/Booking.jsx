@@ -13,7 +13,6 @@ const serviceOptions = {
 };
 
 const acTypeOptions = [
-  "Central",
   "Windows",
   "Split"
 ];

@@ -10,11 +10,11 @@ const Confirmation = () => {
   return (
     <div className="confirmation-container">
       <div className="confirmation-box">
-        <h2>Appointment Confirmed!</h2>
+        <h2>Appointment Pending!</h2>
         <div className="confirmation-message">
           <p>Thank you for booking your appointment with our AC service!</p>
           <p>Your appointment details have been received and are being processed.</p>
-          <p>We will contact you shortly at <strong>{bookingData.phone}</strong> to confirm your booking.</p>
+         
         </div>
 
         <div className="booking-summary">

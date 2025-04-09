@@ -13,7 +13,6 @@ const serviceOptions = {
 };
 
 const acTypeOptions = [
-  "Central",
   "Windows",
   "Split"
 ];
@@ -136,11 +135,11 @@ const AdminBooking = () => {
           // Reset form after successful submission
           resetForm();
         } else {
-          alert("Error saving booking: " + responseData.message);
+          alert("Sorry Fully Booked: " + responseData.message);
         }
       })
       .catch(error => {
-        console.error("Error saving booking:", error);
+        console.error("Sorry Fully Booked:", error);
       });
   };
 
@@ -281,13 +280,6 @@ const AdminBooking = () => {
         </form>
       </div>
       
-      <Modal
-        isOpen={isConfirmModalOpen}
-        title="Booking Confirmation"
-        message={`The booking has been successfully saved with reference ID: ${bookingRef}`}
-        onConfirm={handleModalClose}
-        confirmButtonText="Close"
-      />
     </div>
   );
 };
